@@ -1,10 +1,9 @@
-package main
+package function
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -19,7 +18,7 @@ type Entry struct {
 	Link   string
 }
 
-func scrap(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	c := colly.NewCollector()
 	entries := make([]Entry, 0, 20)
 	URL := r.URL.Query().Get("url")
@@ -48,16 +47,4 @@ func scrap(w http.ResponseWriter, r *http.Request) {
 	c.Visit(URL)
 	enc := json.NewEncoder(w)
 	enc.Encode(entries)
-}
-
-func main() {
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	http.HandleFunc("/", scrap)
-	log.Println("otodom: listening on ", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

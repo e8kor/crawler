@@ -1,0 +1,14 @@
+version: 1.0
+provider:
+  name: openfaas
+functions:
+  otodom:
+    lang: golang-middleware
+    handler: ./otodom
+    image: e8kor/crawler:otodom
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+      GO111MODULE: on
+configuration:
+  templates:
+    - name: golang-middleware
