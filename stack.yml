@@ -9,6 +9,13 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
+  persistor:
+    lang: go
+    handler: ./persistor
+    image: e8kor/crawler:persistor
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+      GO111MODULE: on
 configuration:
   templates:
     - name: golang-middleware
