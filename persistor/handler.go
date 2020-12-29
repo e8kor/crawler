@@ -6,14 +6,21 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
 
 // Entry is domain associated crawled json
 type Entry struct {
-	domain string
-	data   []map[string]interface{}
+	Domain string
+	Data   []json.RawMessage
+}
+
+// Record is enriched Entry with metadata
+type Record struct {
+	Created time.Time
+	Data    json.RawMessage
 }
 
 // Handle a serverless request
@@ -25,6 +32,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		user     = os.Getenv("PG_USER")
 		password = os.Getenv("PG_PASSWORD")
 		dbname   = os.Getenv("PG_DBNAME")
+		created  = time.Now()
+		records  []Record
 		payload  Entry
 		result   sql.Result
 		id       int64
@@ -42,8 +51,15 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	preparedQuery := fmt.Sprintf(`INSERT INTO %s (data) VALUES (%s)`, payload.domain, payload.data)
-	result, err = db.Exec(preparedQuery)
+	for _, entry := range payload.Data {
+		record := Record{
+			Created: created,
+			Data:    entry,
+		}
+		records = append(records, record)
+	}
+
+	result, err = db.Exec("INSERT INTO ? (created, data) VALUES ?", payload.Domain, records)
 	if err != nil {
 		panic(err)
 	}
@@ -55,8 +71,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	response := fmt.Sprintf(`{
 		"status": true,
+		"domain": "%s",
+		"ingestion-time": "%s"
 		"id": "%s"
-	}`, id)
+	}`, payload.Domain, created, id)
 
 	w.Write([]byte(response))
 }
