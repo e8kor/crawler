@@ -6,6 +6,9 @@ functions:
     lang: golang-middleware
     handler: ./otodom
     image: e8kor/crawler:otodom
+    annotations:
+       schedule: "*/5 * * * *"
+       topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
