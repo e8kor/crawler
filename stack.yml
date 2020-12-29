@@ -12,7 +12,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
-    environments:
+    environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
   persistor:
     lang: golang-middleware
