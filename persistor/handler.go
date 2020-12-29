@@ -44,7 +44,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	info := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	info := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", info)
 	if err != nil {
 		panic(err)
@@ -73,7 +73,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		"status": true,
 		"domain": "%s",
 		"ingestion-time": "%s"
-		"id": "%s"
+		"id": "%d"
 	}`, payload.Domain, created, id)
 
 	w.Write([]byte(response))
