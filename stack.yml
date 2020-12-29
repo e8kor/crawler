@@ -7,13 +7,13 @@ functions:
     handler: ./otodom
     image: e8kor/crawler:otodom
     annotations:
-       schedule: "*/5 * * * *"
-       topic: cron-function
+        schedule: "*/5 * * * *"
+        topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
   persistor:
-    lang: go
+    lang: golang-middleware
     handler: ./persistor
     image: e8kor/crawler:persistor
     build_args:
@@ -22,3 +22,4 @@ functions:
 configuration:
   templates:
     - name: golang-middleware
+    - name: go

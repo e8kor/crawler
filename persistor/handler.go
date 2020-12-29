@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -12,11 +13,12 @@ import (
 // Entry is domain associated crawled json
 type Entry struct {
 	domain string
-	data   map[string]interface{}
+	data   []map[string]interface{}
 }
 
 // Handle a serverless request
-func Handle(req []byte) string {
+
+func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
@@ -28,7 +30,7 @@ func Handle(req []byte) string {
 		id       int64
 	)
 
-	err := json.Unmarshal([]byte(req), payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		panic(err)
 	}
@@ -52,8 +54,9 @@ func Handle(req []byte) string {
 	}
 
 	response := fmt.Sprintf(`{
-    "status": true,
-    "id": "%s"
-  }`, id)
-	return response
+		"status": true,
+		"id": "%s"
+	}`, id)
+
+	w.Write([]byte(response))
 }
