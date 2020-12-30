@@ -1,6 +1,7 @@
 package function
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+
+	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 // Entry is domain associated crawled json
@@ -32,30 +35,26 @@ type Result struct {
 }
 
 // Handle a serverless request
-
-func Handle(r *http.Request) {
+func Handle(r handler.Request) (handler.Response, error) {
 	var (
-		host     = os.Getenv("PG_HOST")
-		port     = os.Getenv("PG_PORT")
-		user     = os.Getenv("PG_USER")
-		password = os.Getenv("PG_PASSWORD")
-		dbname   = os.Getenv("PG_DBNAME")
-		created  = time.Now()
-		records  []Record
-		payload  Entry
-		result   sql.Result
-		id       int64
+		created = time.Now()
+		records []Record
+		result  Result
+		payload Entry
+		db      *sql.DB
+		status  sql.Result
+		err     error
+		id      int64
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	info := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", info)
+	db, err = getDB()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer db.Close()
 
@@ -67,22 +66,51 @@ func Handle(r *http.Request) {
 		records = append(records, record)
 	}
 
-	result, err = db.Exec("INSERT INTO ? (created, data) VALUES ?", payload.Domain, records)
+	status, err = db.Exec("INSERT INTO ? (created, data) VALUES ?", payload.Domain, records)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	id, err = result.LastInsertId()
+	id, err = status.LastInsertId()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	response := Result{
+	result = Result{
 		Status:        true,
 		Domain:        payload.Domain,
 		IngestionTime: created,
 		ID:            id,
 	}
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
 
-	w.Write([]byte(response))
+	DestenationURL := r.Header.Get("X-Callback-Url")
+	if DestenationURL == "" {
+		response := handler.Response{
+			Body:       raw,
+			StatusCode: http.StatusOK,
+		}
+		return response, nil
+	}
+
+	resp, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func getDB() (*sql.DB, error) {
+	var (
+		host     = os.Getenv("PG_HOST")
+		port     = os.Getenv("PG_PORT")
+		user     = os.Getenv("PG_USER")
+		password = os.Getenv("PG_PASSWORD")
+		dbname   = os.Getenv("PG_DBNAME")
+	)
+	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	return sql.Open("postgres", connectionString)
 }

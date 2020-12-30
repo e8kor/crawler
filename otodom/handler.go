@@ -1,12 +1,15 @@
 package function
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gocolly/colly/v2"
+
+	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 // Entry stores Otodom dashboard structure
@@ -19,45 +22,59 @@ type Entry struct {
 	Link   string `json:"link"`
 }
 
-func Handle(w http.ResponseWriter, r *http.Request) {
-	URL := r.URL.Query().Get("url")
-	entries := make([]Entry, 0, 20)
+func Handle(r handler.Request) (handler.Response, error) {
+	var (
+		SourceURL = r.URL.Query().Get("url")
+		entries   = make([]Entry, 0, 20)
+	)
 
-	if URL == "" {
-		URL = os.Getenv("SOURCE_URL")
+	if SourceURL == "" {
+		SourceURL = os.Getenv("SOURCE_URL")
 	}
-	if URL == "" {
+	if SourceURL == "" {
 		log.Fatalln("{ \"error\": \"missing url parameter\"}")
-	} else {
-		c := colly.NewCollector()
-		entries := make([]Entry, 0, 20)
-		c.OnHTML("article[id]", func(e *colly.HTMLElement) {
-			entry := Entry{
-				Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
-				Name:   e.ChildText("div.offer-item-details-bottom > ul > li"),
-				Region: e.ChildText("div.offer-item-details > header > p"),
-				Price:  e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m"),
-				Area:   e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area"),
-				Link:   e.ChildAttr("div.offer-item-details > header > h3 > a", "href"),
-			}
-			entries = append(entries, entry)
-		})
-
-		c.OnRequest(func(r *colly.Request) {
-			log.Println("visiting", r.URL.String())
-		})
-
-		c.Visit(URL)
-
-		DestenationURL := r.Header.Get("X-Callback-Url")
-		if DestenationURL == "" {
-			enc := json.NewEncoder(w)
-			enc.Encode(entries)
-		} else {
-			resp, err := http.Post(DestenationURL, "image/jpeg", &entries)
-			if err != nil {
-				panic(err)
-			}
+		response := handler.Response{
+			Body:       []byte("[]"),
+			StatusCode: http.StatusOK,
 		}
+		return response
 	}
+	c := colly.NewCollector()
+	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
+		entry := Entry{
+			Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
+			Name:   e.ChildText("div.offer-item-details-bottom > ul > li"),
+			Region: e.ChildText("div.offer-item-details > header > p"),
+			Price:  e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m"),
+			Area:   e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area"),
+			Link:   e.ChildAttr("div.offer-item-details > header > h3 > a", "href"),
+		}
+		entries = append(entries, entry)
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		log.Println("visiting", r.URL.String())
+	})
+
+	c.Visit(SourceURL)
+
+	raw, err := json.Marshal(entries)
+	if err != nil {
+		return nil, err
+	}
+
+	DestenationURL := r.Header.Get("X-Callback-Url")
+	if DestenationURL == "" {
+		response := handler.Response{
+			Body:       raw,
+			StatusCode: http.StatusOK,
+		}
+		return response, nil
+	}
+
+	resp, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
