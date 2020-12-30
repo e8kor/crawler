@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -38,41 +39,17 @@ type Result struct {
 func Handle(r handler.Request) (handler.Response, error) {
 	var (
 		created  = time.Now()
-		records  []Record
 		result   Result
 		response handler.Response
 		payload  Entry
-		db       *sql.DB
-		status   sql.Result
-		err      error
-		id       int64
 	)
 
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.Unmarshal(r.Body, &payload)
 	if err != nil {
 		return response, err
 	}
 
-	db, err = getDB()
-	if err != nil {
-		return response, err
-	}
-	defer db.Close()
-
-	for _, entry := range payload.Data {
-		record := Record{
-			Created: created,
-			Data:    entry,
-		}
-		records = append(records, record)
-	}
-
-	status, err = db.Exec("INSERT INTO ? (created, data) VALUES ?", payload.Domain, records)
-	if err != nil {
-		return response, err
-	}
-
-	id, err = status.LastInsertId()
+	id, err := insertRecords(created, payload)
 	if err != nil {
 		return response, err
 	}
@@ -97,21 +74,53 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	response, err = http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	destenationResponse, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
 		return response, err
+	}
+
+	response = handler.Response{
+		Body:       streamToByte(destenationResponse.Body),
+		StatusCode: destenationResponse.StatusCode,
+		Header:     destenationResponse.Header,
 	}
 	return response, err
 }
 
-func getDB() (*sql.DB, error) {
+func insertRecords(created time.Time, entry Entry) (int64, error) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
 		user     = os.Getenv("PG_USER")
 		password = os.Getenv("PG_PASSWORD")
 		dbname   = os.Getenv("PG_DBNAME")
+		records  []Record
 	)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	return sql.Open("postgres", connectionString)
+	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		return 0, err
+	}
+	defer db.Close()
+
+	for _, entry := range entry.Data {
+		record := Record{
+			Created: created,
+			Data:    entry,
+		}
+		records = append(records, record)
+	}
+
+	status, err := db.Exec("INSERT INTO ? (created, data) VALUES ?", entry.Domain, records)
+	if err != nil {
+		return 0, err
+	}
+
+	return status.LastInsertId()
+}
+
+func streamToByte(stream io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.Bytes()
 }

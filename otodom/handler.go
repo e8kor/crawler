@@ -3,8 +3,10 @@ package function
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/gocolly/colly/v2"
@@ -23,25 +25,54 @@ type Entry struct {
 }
 
 func Handle(r handler.Request) (handler.Response, error) {
+	var response handler.Response
 
-	var (
-		SourceURL = r.URL.Query().Get("url")
-		entries   = make([]Entry, 0, 20)
-		err       error
-		response  handler.Response
-	)
-
-	if SourceURL == "" {
-		SourceURL = os.Getenv("SOURCE_URL")
-	}
-	if SourceURL == "" {
-		log.Fatalln("{ \"error\": \"missing url parameter\"}")
-		response = handler.Response{
-			Body:       []byte("[]"),
-			StatusCode: http.StatusOK,
-		}
+	query, err := url.ParseQuery(r.QueryString)
+	if err != nil {
 		return response, err
 	}
+
+	var (
+		urls           = query["url"]
+		destenationURL = r.Header.Get("X-Callback-Url")
+	)
+
+	if urls == nil {
+		urls = append(urls, os.Getenv("SOURCE_URL"))
+	}
+
+	if urls == nil {
+		log.Fatalln("{ \"error\": \"missing url parameter\"}")
+	}
+	entries := collectEntriess(urls)
+
+	raw, err := json.Marshal(entries)
+	if err != nil {
+		return response, err
+	}
+
+	if destenationURL == "" {
+		response = handler.Response{
+			Body:       raw,
+			StatusCode: http.StatusOK,
+		}
+		return response, nil
+	}
+
+	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return response, err
+	}
+	response = handler.Response{
+		Body:       streamToByte(destenationResponse.Body),
+		StatusCode: destenationResponse.StatusCode,
+		Header:     destenationResponse.Header,
+	}
+	return response, nil
+}
+
+func collectEntriess(urls []string) []Entry {
+	var entries []Entry
 	c := colly.NewCollector()
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
@@ -59,25 +90,14 @@ func Handle(r handler.Request) (handler.Response, error) {
 		log.Println("visiting", r.URL.String())
 	})
 
-	c.Visit(SourceURL)
-
-	raw, err := json.Marshal(entries)
-	if err != nil {
-		return response, err
+	for _, url := range urls {
+		c.Visit(url)
 	}
+	return entries
+}
 
-	DestenationURL := r.Header.Get("X-Callback-Url")
-	if DestenationURL == "" {
-		response := handler.Response{
-			Body:       raw,
-			StatusCode: http.StatusOK,
-		}
-		return response, err
-	}
-
-	response, err = http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
-	}
-	return response, err
+func streamToByte(stream io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.Bytes()
 }
