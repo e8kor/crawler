@@ -3,7 +3,7 @@ provider:
   name: openfaas
 functions:
   otodom:
-    lang: golang-middleware
+    lang: golang-http
     handler: ./otodom
     image: e8kor/crawler:otodom
     annotations:
@@ -15,7 +15,7 @@ functions:
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
   persistor:
-    lang: golang-middleware
+    lang: golang-http
     handler: ./persistor
     image: e8kor/crawler:persistor
     build_args:
@@ -24,4 +24,5 @@ functions:
 configuration:
   templates:
     - name: golang-middleware
+    - name: golang-http
     - name: go
