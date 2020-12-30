@@ -38,10 +38,10 @@ type Result struct {
 // Handle a serverless request
 func Handle(r handler.Request) (handler.Response, error) {
 	var (
-		created  = time.Now()
-		result   Result
-		response handler.Response
-		payload  Entry
+		destenationURL = r.Header.Get("X-Callback-Url")
+		created        = time.Now()
+		response       handler.Response
+		payload        Entry
 	)
 
 	err := json.Unmarshal(r.Body, &payload)
@@ -54,7 +54,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	result = Result{
+	result := Result{
 		Status:        true,
 		Domain:        payload.Domain,
 		IngestionTime: created,
@@ -65,8 +65,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	DestenationURL := r.Header.Get("X-Callback-Url")
-	if DestenationURL == "" {
+	if destenationURL == "" {
 		response = handler.Response{
 			Body:       raw,
 			StatusCode: http.StatusOK,
@@ -74,7 +73,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	destenationResponse, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
 		return response, err
 	}

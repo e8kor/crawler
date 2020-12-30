@@ -42,7 +42,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 
 	if urls == nil {
-		log.Fatalln("{ \"error\": \"missing url parameter\"}")
+		log.Fatalln("missing url parameter")
 	}
 	entries := collectEntriess(urls)
 
