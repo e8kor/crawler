@@ -23,9 +23,12 @@ type Entry struct {
 }
 
 func Handle(r handler.Request) (handler.Response, error) {
+
 	var (
 		SourceURL = r.URL.Query().Get("url")
 		entries   = make([]Entry, 0, 20)
+		err       error
+		response  handler.Response
 	)
 
 	if SourceURL == "" {
@@ -33,11 +36,11 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 	if SourceURL == "" {
 		log.Fatalln("{ \"error\": \"missing url parameter\"}")
-		response := handler.Response{
+		response = handler.Response{
 			Body:       []byte("[]"),
 			StatusCode: http.StatusOK,
 		}
-		return response
+		return response, err
 	}
 	c := colly.NewCollector()
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
@@ -60,7 +63,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 
 	raw, err := json.Marshal(entries)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
 	DestenationURL := r.Header.Get("X-Callback-Url")
@@ -69,12 +72,12 @@ func Handle(r handler.Request) (handler.Response, error) {
 			Body:       raw,
 			StatusCode: http.StatusOK,
 		}
-		return response, nil
+		return response, err
 	}
 
-	resp, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	response, err = http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
-		return nil, err
+		return response, err
 	}
-	return resp, nil
+	return response, err
 }

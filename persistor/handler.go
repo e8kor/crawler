@@ -37,24 +37,25 @@ type Result struct {
 // Handle a serverless request
 func Handle(r handler.Request) (handler.Response, error) {
 	var (
-		created = time.Now()
-		records []Record
-		result  Result
-		payload Entry
-		db      *sql.DB
-		status  sql.Result
-		err     error
-		id      int64
+		created  = time.Now()
+		records  []Record
+		result   Result
+		response handler.Response
+		payload  Entry
+		db       *sql.DB
+		status   sql.Result
+		err      error
+		id       int64
 	)
 
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
 	db, err = getDB()
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 	defer db.Close()
 
@@ -68,12 +69,12 @@ func Handle(r handler.Request) (handler.Response, error) {
 
 	status, err = db.Exec("INSERT INTO ? (created, data) VALUES ?", payload.Domain, records)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
 	id, err = status.LastInsertId()
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
 	result = Result{
@@ -84,23 +85,23 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 	raw, err := json.Marshal(result)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
 	DestenationURL := r.Header.Get("X-Callback-Url")
 	if DestenationURL == "" {
-		response := handler.Response{
+		response = handler.Response{
 			Body:       raw,
 			StatusCode: http.StatusOK,
 		}
-		return response, nil
+		return response, err
 	}
 
-	resp, err := http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
+	response, err = http.Post(DestenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
-		return nil, err
+		return response, err
 	}
-	return resp, nil
+	return response, err
 }
 
 func getDB() (*sql.DB, error) {
