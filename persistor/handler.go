@@ -13,19 +13,27 @@ import (
 
 // Entry is domain associated crawled json
 type Entry struct {
-	Domain string
-	Data   []json.RawMessage
+	Domain string            `json:"domain"`
+	Data   []json.RawMessage `json:"data"`
 }
 
 // Record is enriched Entry with metadata
 type Record struct {
-	Created time.Time
-	Data    json.RawMessage
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// Result is result of data storing
+type Result struct {
+	Status        bool      `json:"status"`
+	Domain        string    `json:"domain"`
+	IngestionTime time.Time `json:"ingestion-time"`
+	ID            int64     `json:"id"`
 }
 
 // Handle a serverless request
 
-func Handle(w http.ResponseWriter, r *http.Request) {
+func Handle(r *http.Request) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
@@ -69,12 +77,12 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	response := fmt.Sprintf(`{
-		"status": true,
-		"domain": "%s",
-		"ingestion-time": "%s"
-		"id": "%d"
-	}`, payload.Domain, created, id)
+	response := Result{
+		Status:        true,
+		Domain:        payload.Domain,
+		IngestionTime: created,
+		ID:            id,
+	}
 
 	w.Write([]byte(response))
 }

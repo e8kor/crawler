@@ -11,22 +11,23 @@ import (
 
 // Entry stores Otodom dashboard structure
 type Entry struct {
-	Title  string
-	Name   string
-	Region string
-	Price  string
-	Area   string
-	Link   string
+	Title  string `json:"title"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+	Price  string `json:"price"`
+	Area   string `json:"area"`
+	Link   string `json:"link"`
 }
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 	URL := r.URL.Query().Get("url")
+	entries := make([]Entry, 0, 20)
+
 	if URL == "" {
 		URL = os.Getenv("SOURCE_URL")
 	}
 	if URL == "" {
 		log.Fatalln("{ \"error\": \"missing url parameter\"}")
-		w.Write([]byte("[]"))
 	} else {
 		c := colly.NewCollector()
 		entries := make([]Entry, 0, 20)
@@ -47,7 +48,16 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		})
 
 		c.Visit(URL)
-		enc := json.NewEncoder(w)
-		enc.Encode(entries)
+
+		DestenationURL := r.Header.Get("X-Callback-Url")
+		if DestenationURL == "" {
+			enc := json.NewEncoder(w)
+			enc.Encode(entries)
+		} else {
+			resp, err := http.Post(DestenationURL, "image/jpeg", &entries)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 }
