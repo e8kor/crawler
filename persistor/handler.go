@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -90,9 +91,9 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
-		user     = os.Getenv("PG_USER")
-		password = os.Getenv("PG_PASSWORD")
-		dbname   = os.Getenv("PG_DBNAME")
+		user     = getAPISecret("database/username")
+		password = getAPISecret("database/password")
+		dbname   = getAPISecret("database/database_name")
 		records  []Record
 	)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
@@ -122,4 +123,14 @@ func streamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
 	return buf.Bytes()
+}
+
+func getAPISecret(secretName string) (secret string) {
+	secretBytes, err := ioutil.ReadFile("/var/openfaas/secrets/" + secretName)
+	if err != nil {
+		panic(err)
+	}
+	secret = string(secretBytes)
+	fmt.Println(secretName, " = ", secret)
+	return secret
 }
