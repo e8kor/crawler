@@ -107,19 +107,19 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 
 	var inserts []string
 	for _, entry := range entry.Data {
-		time := created.String()
+		time := created.Format(time.RFC3339)
 		j, err := entry.MarshalJSON()
 		if err != nil {
 			panic(err)
 		}
-		inserts = append(inserts, fmt.Sprintf("(\"%s\", \"%s\")", time, j))
+		inserts = append(inserts, fmt.Sprintf("(TO_TIMESTAMP('%s'), '%s')", time, j))
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
 		return 0, nil
 	}
-	insertStatement := strings.Join(inserts[:], ", ")
-	statement := fmt.Sprintf("INSERT INTO %s (created, data) VALUES ( %s )", entry.Domain, insertStatement)
+	insertStatement := strings.Join(inserts[:], ", ") + ";"
+	statement := fmt.Sprintf("INSERT INTO %s VALUES %s", entry.Domain, insertStatement)
 	fmt.Println("statement is: ", statement)
 	status, err := db.Exec(statement)
 	if err != nil {
