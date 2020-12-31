@@ -112,7 +112,7 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 		if err != nil {
 			panic(err)
 		}
-		inserts = append(inserts, fmt.Sprintf("(%s, %s)", time, j))
+		inserts = append(inserts, fmt.Sprintf("(\"%s\", \"%s\")", time, j))
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
