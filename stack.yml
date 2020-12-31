@@ -22,7 +22,9 @@ functions:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
     secrets:
-      - database
+      - database-name
+      - database-username
+      - database-password
 configuration:
   templates:
     - name: golang-middleware
