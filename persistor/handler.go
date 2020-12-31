@@ -118,8 +118,10 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 		log.Println("no records to insert")
 		return 0, nil
 	}
-	insertStatement := "( " + strings.Join(inserts[:], ", ") + " )"
-	status, err := db.Exec("INSERT INTO ? (created, data) VALUES ?", entry.Domain, insertStatement)
+	insertStatement := strings.Join(inserts[:], ", ")
+	statement := fmt.Sprintf("INSERT INTO %s (created, data) VALUES ( %s )", entry.Domain, insertStatement)
+	fmt.Println("statement is: ", statement)
+	status, err := db.Exec(statement)
 	if err != nil {
 		return 0, err
 	}
