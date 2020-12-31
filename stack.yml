@@ -21,6 +21,8 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
+    secrets:
+      - database
 configuration:
   templates:
     - name: golang-middleware
