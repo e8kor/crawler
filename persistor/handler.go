@@ -82,7 +82,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	log.Println("using callback %s", destenationURL)
+	log.Printf("using callback %s", destenationURL)
 	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
 		return response, err
