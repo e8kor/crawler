@@ -91,11 +91,20 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
-		user     = getAPISecret("database/username")
-		password = getAPISecret("database/password")
-		dbname   = getAPISecret("database/database_name")
+		user     = getAPISecret("database")
+		password = getAPISecret("database")
+		dbname   = getAPISecret("database")
 		records  []Record
 	)
+
+	// var (
+	// 	host     = os.Getenv("PG_HOST")
+	// 	port     = os.Getenv("PG_PORT")
+	// 	user     = getAPISecret("database/username")
+	// 	password = getAPISecret("database/password")
+	// 	dbname   = getAPISecret("database/database_name")
+	// 	records  []Record
+	// )
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
