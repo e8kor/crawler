@@ -132,6 +132,5 @@ func getAPISecret(secretName string) (secret string) {
 		panic(err)
 	}
 	secret = string(secretBytes)
-	fmt.Println(secretName, " = ", secret)
 	return secret
 }
