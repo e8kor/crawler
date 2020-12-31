@@ -54,7 +54,8 @@ func Handle(r handler.Request) (handler.Response, error) {
 
 	id, err := insertRecords(created, payload)
 	if err != nil {
-		return response, err
+		log.Fatalln("error writing data", err)
+		id = 0
 	}
 
 	result := Result{

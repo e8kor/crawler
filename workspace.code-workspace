@@ -20,7 +20,7 @@
 				"name": "Database",
 				"username": "postgres",
 				"password": "Fx_MneITvTzS_Pkh",
-				"database": "postgres"
+				"database": "pipelines"
 			}
 		],
 		"files.watcherExclude": {
