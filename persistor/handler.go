@@ -35,7 +35,7 @@ type Result struct {
 	Status        bool      `json:"status"`
 	Domain        string    `json:"domain"`
 	IngestionTime time.Time `json:"ingestion-time"`
-	ID            int64     `json:"id"`
+	Message       string    `json:"message"`
 }
 
 // Handle a serverless request
@@ -44,29 +44,34 @@ func Handle(r handler.Request) (handler.Response, error) {
 		destenationURL = r.Header.Get("X-Callback-Url")
 		created        = time.Now()
 		response       handler.Response
+		result         Result
 		payload        Entry
 	)
 
 	err := json.Unmarshal(r.Body, &payload)
 	if err != nil {
-		return response, err
+		panic(err)
 	}
 
-	id, err := insertRecords(created, payload)
+	err = insertRecords(created, payload)
 	if err != nil {
-		log.Fatalln("error writing data", err)
-		id = 0
-	}
-
-	result := Result{
-		Status:        true,
-		Domain:        payload.Domain,
-		IngestionTime: created,
-		ID:            id,
+		message := fmt.Sprintf("error: %s", err)
+		result = Result{
+			Status:        false,
+			Domain:        payload.Domain,
+			IngestionTime: created,
+			Message:       message,
+		}
+	} else {
+		result = Result{
+			Status:        false,
+			Domain:        payload.Domain,
+			IngestionTime: created,
+		}
 	}
 	raw, err := json.Marshal(result)
 	if err != nil {
-		return response, err
+		panic(err)
 	}
 
 	if destenationURL == "" {
@@ -77,6 +82,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
+	log.Println("using callback %s", destenationURL)
 	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 	if err != nil {
 		return response, err
@@ -90,8 +96,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	return response, err
 }
 
-func insertRecords(created time.Time, entry Entry) (int64, error) {
-
+func insertRecords(created time.Time, entry Entry) error {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
@@ -102,7 +107,7 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	defer db.Close()
 
@@ -117,17 +122,16 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
-		return 0, nil
+		return nil
 	}
 	insertStatement := strings.Join(inserts[:], ", ") + ";"
 	statement := fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s", entry.Domain, insertStatement)
 	fmt.Println("statement is: ", statement)
-	status, err := db.Exec(statement)
+	_, err = db.Exec(statement)
 	if err != nil {
-		return 0, err
+		return err
 	}
-
-	return status.LastInsertId()
+	return nil
 }
 
 func streamToByte(stream io.Reader) []byte {
