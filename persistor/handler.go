@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -95,7 +97,6 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 		user     = getAPISecret("database-username")
 		password = getAPISecret("database-password")
 		dbname   = getAPISecret("database-name")
-		records  []Record
 	)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", connectionString)
@@ -104,15 +105,21 @@ func insertRecords(created time.Time, entry Entry) (int64, error) {
 	}
 	defer db.Close()
 
+	var inserts []string
 	for _, entry := range entry.Data {
-		record := Record{
-			Created: created,
-			Data:    entry,
+		time := created.String()
+		j, err := entry.MarshalJSON()
+		if err != nil {
+			panic(err)
 		}
-		records = append(records, record)
+		inserts = append(inserts, fmt.Sprintf("(%s, %s)", time, j))
 	}
-
-	status, err := db.Exec("INSERT INTO ? (created, data) VALUES ?", entry.Domain, records)
+	if inserts == nil {
+		log.Println("no records to insert")
+		return 0, nil
+	}
+	insertStatement := "( " + strings.Join(inserts[:], ", ") + " )"
+	status, err := db.Exec("INSERT INTO ? (created, data) VALUES ?", entry.Domain, insertStatement)
 	if err != nil {
 		return 0, err
 	}
