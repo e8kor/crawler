@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/gocolly/colly/v2"
 
@@ -36,10 +35,6 @@ func Handle(r handler.Request) (handler.Response, error) {
 		urls           = query["url"]
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
-
-	if urls == nil {
-		urls = append(urls, os.Getenv("SOURCE_URL"))
-	}
 
 	if urls == nil {
 		log.Fatalln("missing url parameter")

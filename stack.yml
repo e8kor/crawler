@@ -2,10 +2,10 @@ version: 1.0
 provider:
   name: openfaas
 functions:
-  otodom:
+  otodom-orchestrator:
     lang: golang-http
-    handler: ./otodom
-    image: e8kor/crawler:otodom
+    handler: ./otodom-orchestrator
+    image: e8kor/crawler:otodom-orchestrator
     annotations:
       schedule: "*/5 * * * *"
       topic: cron-function
@@ -14,6 +14,13 @@ functions:
       GO111MODULE: on
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
+  otodom:
+    lang: golang-http
+    handler: ./otodom
+    image: e8kor/crawler:otodom
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+      GO111MODULE: on
   persistor:
     lang: golang-http
     handler: ./persistor
