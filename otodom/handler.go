@@ -117,7 +117,7 @@ func collectPages(url string) []Page {
 
 	log.Printf("found last page %v\n", lastPage)
 
-	for i := 1; i < int(lastPage.Page); i++ {
+	for i := 1; i < lastPage.Page; i++ {
 		var pageURL string
 		if strings.Contains(url, "?") {
 			pageURL = fmt.Sprintf("%s&page=%d", url, i)
