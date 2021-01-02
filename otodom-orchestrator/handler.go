@@ -44,7 +44,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		"data": %s
 	}`, string(streamToByte(crawlerResponse.Body)))
 
-	persistorResponse, err := http.Post("http://localhost/persistor", "application/json", bytes.NewBuffer([]byte(crawlerRequest)))
+	persistorResponse, err := http.Post(gatewayPrefix+"/persistor", "application/json", bytes.NewBuffer([]byte(crawlerRequest)))
 	if err != nil {
 		panic(err)
 	}
