@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 
-	"github.com/e8kor/waader/log"
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
@@ -45,7 +45,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		"data": %s
 	}`, string(streamToByte(crawlerResponse.Body)))
 
-	log.Infoln("sending persist payload: " + persistorPayload)
+	log.Println("sending persist payload: " + persistorPayload)
 
 	persistorResponse, err := http.Post(gatewayPrefix+"/persistor", "application/json", bytes.NewBuffer([]byte(persistorPayload)))
 	if err != nil {
