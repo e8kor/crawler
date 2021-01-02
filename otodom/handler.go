@@ -3,13 +3,10 @@ package function
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/gocolly/colly/v2"
 
@@ -25,17 +22,6 @@ type Entry struct {
 	Area   string `json:"area"`
 	Link   string `json:"link"`
 }
-
-// Page stores Otodom dashboard structure
-type Page struct {
-	URL  string
-	Page int
-}
-type PageSorter []Page
-
-func (a PageSorter) Len() int           { return len(a) }
-func (a PageSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a PageSorter) Less(i, j int) bool { return a[i].Page < a[j].Page }
 
 func Handle(r handler.Request) (handler.Response, error) {
 	var (
@@ -57,9 +43,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		log.Fatalln("missing url parameter")
 	}
 	for _, url := range urls {
-		for _, page := range collectPages(url) {
-			entries = append(entries, collectEntries(page.URL)...)
-		}
+		entries = append(entries, collectEntries(url)...)
 	}
 
 	raw, err := json.Marshal(entries)
@@ -85,54 +69,6 @@ func Handle(r handler.Request) (handler.Response, error) {
 		Header:     destenationResponse.Header,
 	}
 	return response, nil
-}
-
-func collectPages(url string) []Page {
-	var (
-		pages    []Page
-		lastPage Page
-		c        = colly.NewCollector()
-	)
-
-	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
-		i, err := strconv.Atoi(e.Text)
-		if err != nil {
-			log.Println("error parsing page", err)
-		} else {
-			page := Page{
-				Page: i,
-				URL:  e.Attr("href"),
-			}
-			if lastPage.Page < page.Page {
-				lastPage = page
-			}
-		}
-	})
-
-	c.OnRequest(func(r *colly.Request) {
-		log.Println("searching for last page on ", r.URL.String())
-	})
-
-	c.Visit(url)
-
-	log.Printf("found last page %v\n", lastPage)
-
-	for i := 1; i < lastPage.Page; i++ {
-		var pageURL string
-		if strings.Contains(url, "?") {
-			pageURL = fmt.Sprintf("%s&page=%d", url, i)
-		} else {
-			pageURL = fmt.Sprintf("%s?page=%d", url, i)
-		}
-		pages = append(pages, Page{
-			Page: i,
-			URL:  pageURL,
-		})
-	}
-
-	log.Printf("found %d pages\n", len(pages))
-
-	return pages
 }
 
 func collectEntries(url string) []Entry {

@@ -9,11 +9,24 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gocolly/colly/v2"
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
+
+// Page stores Otodom dashboard structure
+type Page struct {
+	URL  string
+	Page int
+}
+type PageSorter []Page
+
+func (a PageSorter) Len() int           { return len(a) }
+func (a PageSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a PageSorter) Less(i, j int) bool { return a[i].Page < a[j].Page }
 
 // Entry is domain associated crawled json
 type Entry struct {
@@ -32,29 +45,34 @@ func Handle(r handler.Request) (handler.Response, error) {
 		response      handler.Response
 		urls          = query["url"]
 		gatewayPrefix = os.Getenv("GATEWAY_URL")
-		rawJSON       []json.RawMessage
+		results       []json.RawMessage
 	)
 
 	if urls == nil {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
+	for _, url := range urls {
+		for _, page := range collectPages(url) {
+			log.Printf("sending otodom crawler request for %s\n", page.URL)
+			crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom?url=%s", gatewayPrefix, page.URL))
+			if err != nil {
+				return response, err
+			}
 
-	log.Println("sending otodom crawler request")
-	queryArguments := fmt.Sprintf("?url=%s", strings.Join(urls[:], "&url="))
-	crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom%s", gatewayPrefix, queryArguments))
-	if err != nil {
-		return response, err
-	}
+			var rawJSON []json.RawMessage
+			err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
+			if err != nil {
+				return response, err
+			}
 
-	err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
-	if err != nil {
-		return response, err
+			results = append(results, rawJSON...)
+		}
 	}
 
 	raw, err := json.Marshal(Entry{
 		Created: time.Now(),
 		Domain:  "otodom",
-		Data:    rawJSON,
+		Data:    results,
 	})
 	if err != nil {
 		return response, err
@@ -80,6 +98,53 @@ func Handle(r handler.Request) (handler.Response, error) {
 	return response, nil
 }
 
+func collectPages(url string) []Page {
+	var (
+		pages    []Page
+		lastPage Page
+		c        = colly.NewCollector()
+	)
+
+	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
+		i, err := strconv.Atoi(e.Text)
+		if err != nil {
+			log.Println("error parsing page", err)
+		} else {
+			page := Page{
+				Page: i,
+				URL:  e.Attr("href"),
+			}
+			if lastPage.Page < page.Page {
+				lastPage = page
+			}
+		}
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		log.Println("searching for last page on ", r.URL.String())
+	})
+
+	c.Visit(url)
+
+	log.Printf("found last page %v\n", lastPage)
+
+	for i := 1; i < lastPage.Page; i++ {
+		var pageURL string
+		if strings.Contains(url, "?") {
+			pageURL = fmt.Sprintf("%s&page=%d", url, i)
+		} else {
+			pageURL = fmt.Sprintf("%s?page=%d", url, i)
+		}
+		pages = append(pages, Page{
+			Page: i,
+			URL:  pageURL,
+		})
+	}
+
+	log.Printf("found %d pages\n", len(pages))
+
+	return pages
+}
 func streamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
