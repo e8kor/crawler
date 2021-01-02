@@ -60,7 +60,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		return response, err
 	}
 
-	log.Printf("sending persist payload: %v\n", string(raw))
+	log.Printf("sending persist payload: %s\n", string(raw))
 	databaseResponse, err := http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
 	if err != nil {
 		return response, err
@@ -71,7 +71,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if err != nil {
 		return response, err
 	}
-	log.Printf("received storage response persist payload: %s\n", storageResponse)
+	log.Printf("received storage response persist payload: %v\n", storageResponse)
 	response = handler.Response{
 		Body:       []byte("saga completed"),
 		StatusCode: databaseResponse.StatusCode,
