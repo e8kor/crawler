@@ -37,6 +37,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
+    environment:
       read_timeout: "300s"
       write_timeout: "300s"
       exec_timeout: "300s"
