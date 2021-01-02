@@ -70,7 +70,7 @@ functions:
     environment:
       MINIO_HOST: "192.168.0.211"
     secrets:
-      - storage-assess-key
+      - storage-access-key
       - storage-secret-key
 configuration:
   templates:
