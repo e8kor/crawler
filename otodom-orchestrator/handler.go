@@ -20,6 +20,7 @@ type Entry struct {
 }
 
 func Handle(r handler.Request) (handler.Response, error) {
+	gatewayPrefix := os.Getenv("GATEWAY_URL")
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
 		panic(err)
@@ -33,8 +34,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if urls == nil {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
-
-	crawlerResponse, err := http.Get("http://localhost/otodom?url=" + strings.Join(urls[:], "&url="))
+	crawlerResponse, err := http.Get(gatewayPrefix + "/otodom?url=" + strings.Join(urls[:], "&url="))
 	if err != nil {
 		panic(err)
 	}

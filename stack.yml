@@ -14,6 +14,7 @@ functions:
       GO111MODULE: on
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
+      GATEWAY_URL: "http://gateway.openfaas:8080/function"
   otodom:
     lang: golang-http
     handler: ./otodom
