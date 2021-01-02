@@ -95,7 +95,7 @@ func collectPages(url string) []Page {
 	)
 
 	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
-		i, err := strconv.ParseInt(e.Text, 10, 64)
+		i, err := strconv.Atoi(e.Text)
 		if err != nil {
 			log.Println("error parsing page", err)
 		} else {
