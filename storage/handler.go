@@ -135,7 +135,7 @@ func insert(entry Entry) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("upload status: %s\n", status)
+	log.Printf("upload status: %v\n", status)
 	return nil
 }
 
