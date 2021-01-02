@@ -10,26 +10,29 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 // Entry is domain associated crawled json
 type Entry struct {
-	Domain string            `json:"domain"`
-	Data   []json.RawMessage `json:"data"`
+	Created time.Time         `json:"created"`
+	Domain  string            `json:"domain"`
+	Data    []json.RawMessage `json:"data"`
 }
 
 func Handle(r handler.Request) (handler.Response, error) {
-	gatewayPrefix := os.Getenv("GATEWAY_URL")
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
 		panic(err)
 	}
 
 	var (
-		response handler.Response
-		urls     = query["url"]
+		response      handler.Response
+		urls          = query["url"]
+		gatewayPrefix = os.Getenv("GATEWAY_URL")
+		rawJSON       []json.RawMessage
 	)
 
 	if urls == nil {
@@ -37,27 +40,42 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 
 	log.Println("sending otodom crawler request")
-
-	crawlerResponse, err := http.Get(gatewayPrefix + "/otodom?url=" + strings.Join(urls[:], "&url="))
+	queryArguments := fmt.Sprintf("?url=%s", strings.Join(urls[:], "&url="))
+	crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom%s", gatewayPrefix, queryArguments))
 	if err != nil {
-		panic(err)
+		return response, err
 	}
 
-	persistorPayload := fmt.Sprintf(`{
-		"domain": "otodom",
-		"data": %s
-	}`, string(streamToByte(crawlerResponse.Body)))
-
-	log.Println("sending persist payload: " + persistorPayload)
-
-	persistorResponse, err := http.Post(gatewayPrefix+"/persistor", "application/json", bytes.NewBuffer([]byte(persistorPayload)))
+	err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
 	if err != nil {
-		panic(err)
+		return response, err
 	}
+
+	raw, err := json.Marshal(Entry{
+		Created: time.Now(),
+		Domain:  "otodom",
+		Data:    rawJSON,
+	})
+	if err != nil {
+		return response, err
+	}
+
+	log.Printf("sending persist payload: %s\n", string(raw))
+	databaseResponse, err := http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return response, err
+	}
+
+	log.Printf("received database response persist payload: %s\n", databaseResponse)
+	storageResponse, err := http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return response, err
+	}
+	log.Printf("received storage response persist payload: %s\n", storageResponse)
 	response = handler.Response{
-		Body:       streamToByte(persistorResponse.Body),
-		StatusCode: persistorResponse.StatusCode,
-		Header:     persistorResponse.Header,
+		Body:       []byte("saga completed"),
+		StatusCode: databaseResponse.StatusCode,
+		Header:     databaseResponse.Header,
 	}
 	return response, nil
 }

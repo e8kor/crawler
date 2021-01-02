@@ -34,10 +34,10 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
-  persistor:
+  database:
     lang: golang-http
-    handler: ./persistor
-    image: e8kor/crawler:persistor
+    handler: ./database
+    image: e8kor/crawler:database
     limits:
       memory: 64Mi
       cpu: 128m
@@ -54,6 +54,24 @@ functions:
       - database-name
       - database-username
       - database-password
+  storage:
+    lang: golang-http
+    handler: ./storage
+    image: e8kor/crawler:storage
+    limits:
+      memory: 64Mi
+      cpu: 128m
+    requests:
+      memory: 32Mi
+      cpu: 128m
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+      GO111MODULE: on
+    environment:
+      MINIO_HOST: "192.168.0.211"
+    secrets:
+      - storage-assess-key
+      - storage-secret-key
 configuration:
   templates:
     - name: golang-middleware

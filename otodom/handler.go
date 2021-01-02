@@ -3,11 +3,13 @@ package function
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 
@@ -29,9 +31,17 @@ type Page struct {
 	URL  string
 	Page int64
 }
+type PageSorter []Page
+
+func (a PageSorter) Len() int           { return len(a) }
+func (a PageSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a PageSorter) Less(i, j int) bool { return a[i].Page < a[j].Page }
 
 func Handle(r handler.Request) (handler.Response, error) {
-	var response handler.Response
+	var (
+		response handler.Response
+		entries  []Entry
+	)
 
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
@@ -46,7 +56,11 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if urls == nil {
 		log.Fatalln("missing url parameter")
 	}
-	entries := collectEntriess(urls)
+	for _, url := range urls {
+		for _, page := range collectPages(url) {
+			entries = append(entries, collectEntries(page.URL)...)
+		}
+	}
 
 	raw, err := json.Marshal(entries)
 	if err != nil {
@@ -72,11 +86,14 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 	return response, nil
 }
-func findLastPage(url string) Page {
+
+func collectPages(url string) []Page {
 	var (
+		pages    []Page
 		lastPage Page
+		c        = colly.NewCollector()
 	)
-	c := colly.NewCollector()
+
 	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
 		i, err := strconv.ParseInt(e.Text, 10, 64)
 		if err != nil {
@@ -95,15 +112,29 @@ func findLastPage(url string) Page {
 	c.OnRequest(func(r *colly.Request) {
 		log.Println("searching for last page on ", r.URL.String())
 	})
+	for i := 1; i < int(lastPage.Page); i++ {
+		var pageURL string
+		if strings.Contains(url, "?") {
+			pageURL = fmt.Sprintf("%s&page=%d", url, i)
+		} else {
+			pageURL = fmt.Sprintf("%s?page=%d", url, i)
+		}
+		pages = append(pages, Page{
+			Page: int64(i),
+			URL:  pageURL,
+		})
+	}
 
 	c.Visit(url)
 
-	return lastPage
+	return pages
 }
 
-func collectEntriess(urls []string) []Entry {
-	var entries []Entry
-	c := colly.NewCollector()
+func collectEntries(url string) []Entry {
+	var (
+		entries []Entry
+		c       = colly.NewCollector()
+	)
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
 			Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
@@ -120,9 +151,7 @@ func collectEntriess(urls []string) []Entry {
 		log.Println("visiting", r.URL.String())
 	})
 
-	for _, url := range urls {
-		c.Visit(url)
-	}
+	c.Visit(url)
 	return entries
 }
 
