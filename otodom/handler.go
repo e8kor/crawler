@@ -29,7 +29,7 @@ type Entry struct {
 // Page stores Otodom dashboard structure
 type Page struct {
 	URL  string
-	Page int64
+	Page int
 }
 type PageSorter []Page
 
@@ -97,7 +97,7 @@ func collectPages(url string) []Page {
 	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
 		i, err := strconv.ParseInt(e.Text, 10, 64)
 		if err != nil {
-			log.Fatalln("error parsing last page", err)
+			log.Println("error parsing page", err)
 		} else {
 			page := Page{
 				Page: i,
@@ -112,6 +112,11 @@ func collectPages(url string) []Page {
 	c.OnRequest(func(r *colly.Request) {
 		log.Println("searching for last page on ", r.URL.String())
 	})
+
+	c.Visit(url)
+
+	log.Printf("found last page %v\n", lastPage)
+
 	for i := 1; i < int(lastPage.Page); i++ {
 		var pageURL string
 		if strings.Contains(url, "?") {
@@ -120,12 +125,12 @@ func collectPages(url string) []Page {
 			pageURL = fmt.Sprintf("%s?page=%d", url, i)
 		}
 		pages = append(pages, Page{
-			Page: int64(i),
+			Page: i,
 			URL:  pageURL,
 		})
 	}
 
-	c.Visit(url)
+	log.Printf("found %d pages\n", len(pages))
 
 	return pages
 }
