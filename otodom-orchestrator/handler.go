@@ -41,7 +41,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 
 	persistorPayload := fmt.Sprintf(`{
-		"domain": "otodom"
+		"domain": "otodom",
 		"data": %s
 	}`, string(streamToByte(crawlerResponse.Body)))
 
