@@ -157,6 +157,8 @@ func collectEntries(url string) []Entry {
 	})
 
 	c.Visit(url)
+
+	log.Printf("collected %d records for url %s\n", len(entries), url)
 	return entries
 }
 

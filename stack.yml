@@ -21,6 +21,9 @@ functions:
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
+      read_timeout: "300s"
+      write_timeout: "300s"
+      exec_timeout: "300s"
   otodom:
     lang: golang-http
     handler: ./otodom
@@ -34,6 +37,9 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
+      read_timeout: "300s"
+      write_timeout: "300s"
+      exec_timeout: "300s"
   database:
     lang: golang-http
     handler: ./database
