@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/e8kor/waader/log"
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
@@ -39,12 +40,14 @@ func Handle(r handler.Request) (handler.Response, error) {
 		panic(err)
 	}
 
-	crawlerRequest := fmt.Sprintf(`{
+	persistorPayload := fmt.Sprintf(`{
 		"domain": "otodom"
 		"data": %s
 	}`, string(streamToByte(crawlerResponse.Body)))
 
-	persistorResponse, err := http.Post(gatewayPrefix+"/persistor", "application/json", bytes.NewBuffer([]byte(crawlerRequest)))
+	log.Infoln("sending persist payload: " + persistorPayload)
+
+	persistorResponse, err := http.Post(gatewayPrefix+"/persistor", "application/json", bytes.NewBuffer([]byte(persistorPayload)))
 	if err != nil {
 		panic(err)
 	}
