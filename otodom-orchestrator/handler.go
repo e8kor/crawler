@@ -35,6 +35,9 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if urls == nil {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
+
+	log.Println("sending otodom crawler request")
+
 	crawlerResponse, err := http.Get(gatewayPrefix + "/otodom?url=" + strings.Join(urls[:], "&url="))
 	if err != nil {
 		panic(err)

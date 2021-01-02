@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gocolly/colly/v2"
 
@@ -21,6 +22,12 @@ type Entry struct {
 	Price  string `json:"price"`
 	Area   string `json:"area"`
 	Link   string `json:"link"`
+}
+
+// Page stores Otodom dashboard structure
+type Page struct {
+	URL  string
+	Page int64
 }
 
 func Handle(r handler.Request) (handler.Response, error) {
@@ -64,6 +71,34 @@ func Handle(r handler.Request) (handler.Response, error) {
 		Header:     destenationResponse.Header,
 	}
 	return response, nil
+}
+func findLastPage(url string) Page {
+	var (
+		lastPage Page
+	)
+	c := colly.NewCollector()
+	c.OnHTML("#pagerForm > ul > li > a", func(e *colly.HTMLElement) {
+		i, err := strconv.ParseInt(e.Text, 10, 64)
+		if err != nil {
+			log.Fatalln("error parsing last page", err)
+		} else {
+			page := Page{
+				Page: i,
+				URL:  e.Attr("href"),
+			}
+			if lastPage.Page < page.Page {
+				lastPage = page
+			}
+		}
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		log.Println("searching for last page on ", r.URL.String())
+	})
+
+	c.Visit(url)
+
+	return lastPage
 }
 
 func collectEntriess(urls []string) []Entry {
