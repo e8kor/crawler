@@ -184,7 +184,7 @@ func getEntries(wg sync.WaitGroup, ch chan []json.RawMessage, gatewayPrefix stri
 		return
 	}
 
-	log.Println("received response from crawler for %s\n", page.URL)
+	log.Printf("received response from crawler for %s\n", page.URL)
 
 	ch <- data
 	return
