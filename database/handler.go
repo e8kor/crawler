@@ -117,7 +117,6 @@ func insert(entry Entry) (err error) {
 	}
 	insertStatement := strings.Join(inserts[:], ", ")
 	statement := fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
-	fmt.Printf("statement is: %s\n", statement)
 	_, err = db.Exec(statement)
 	return
 }

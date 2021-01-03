@@ -81,7 +81,7 @@ functions:
       - storage-access-key
       - storage-secret-key
     labels:
-      com.openfaas.scale.min: 2
+      com.openfaas.scale.min: 1
 configuration:
   templates:
     - name: golang-middleware
