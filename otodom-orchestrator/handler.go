@@ -52,9 +52,11 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if urls == nil {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
-	wg := sync.WaitGroup{}
 	for _, url := range urls {
-		for _, page := range collectPages(url) {
+		pages := collectPages(url)
+		JsonSlice := make([][]json.RawMessage, len(pages))
+		wg := sync.WaitGroup{}
+		for i, page := range pages {
 			wg.Add(1)
 			go func(page Page) {
 				defer wg.Done()
@@ -64,11 +66,13 @@ func Handle(r handler.Request) (handler.Response, error) {
 					return
 				}
 				log.Printf("response from otodom crawler url %s\n%v\n", page.URL, rawJSON)
-				results = append(results, rawJSON...)
+				JsonSlice[i] = rawJSON
 			}(page)
 		}
+		wg.Wait()
+
+		results = append(results, flatten(JsonSlice)...)
 	}
-	wg.Wait()
 
 	raw, err := json.Marshal(Entry{
 		Created: time.Now(),
@@ -99,6 +103,9 @@ func Handle(r handler.Request) (handler.Response, error) {
 	return response, nil
 }
 
+func flatten(m [][]json.RawMessage) []json.RawMessage {
+	return m[0][:cap(m[0])]
+}
 func collectPages(url string) []Page {
 	var (
 		pages    []Page
