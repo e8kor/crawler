@@ -63,6 +63,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 				if err != nil {
 					return
 				}
+				log.Printf("response from otodom crawler url %s\n%v\n", page.URL, rawJSON)
 				results = append(results, rawJSON...)
 			}(page)
 		}
@@ -147,12 +148,12 @@ func collectPages(url string) []Page {
 }
 
 func getEntries(gatewayPrefix string, page Page) (rawJSON []json.RawMessage, err error) {
-	crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
+	response, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
+	err = json.Unmarshal(streamToByte(response.Body), &rawJSON)
 	if err != nil {
 		return nil, err
 	}
