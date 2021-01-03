@@ -23,15 +23,14 @@ type Entry struct {
 	Link   string `json:"link"`
 }
 
-func Handle(r handler.Request) (handler.Response, error) {
+func Handle(r handler.Request) (response handler.Response, err error) {
 	var (
-		response handler.Response
-		entries  []Entry
+		entries      []Entry
+		httpResponse *http.Response
 	)
-
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
-		return response, err
+		return
 	}
 
 	var (
@@ -48,18 +47,18 @@ func Handle(r handler.Request) (handler.Response, error) {
 
 	raw, err := json.Marshal(entries)
 	if err != nil {
-		return response, err
+		return
 	}
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
 		if err != nil {
-			return response, err
+			return
 		}
-		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
+		httpResponse, err = http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 		if err != nil {
-			return response, err
+			return
 		}
-		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
+		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
 	}
 
 	response = handler.Response{
@@ -67,14 +66,13 @@ func Handle(r handler.Request) (handler.Response, error) {
 		StatusCode: http.StatusOK,
 		Header:     r.Header,
 	}
-	return response, nil
+	return
 }
 
-func collectEntries(url string) []Entry {
-	var (
-		entries []Entry
-		c       = colly.NewCollector()
-	)
+func collectEntries(url string) (entries []Entry) {
+
+	c := colly.NewCollector()
+
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
 			Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),

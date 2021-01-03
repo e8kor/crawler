@@ -86,7 +86,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 	return response, err
 }
 
-func insert(entry Entry) error {
+func insert(entry Entry) (err error) {
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
@@ -95,33 +95,31 @@ func insert(entry Entry) error {
 		dbname   = getAPISecret("database-name")
 		inserts  []string
 		time     = entry.Created.Format(time.RFC3339)
+		bytes    []byte
 	)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		return err
+		return
 	}
 	defer db.Close()
 
 	for _, entry := range entry.Data {
-		j, err := entry.MarshalJSON()
+		bytes, err = entry.MarshalJSON()
 		if err != nil {
-			return err
+			return
 		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, j))
+		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, bytes))
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
-		return nil
+		return
 	}
 	insertStatement := strings.Join(inserts[:], ", ")
 	statement := fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
 	fmt.Printf("statement is: %s\n", statement)
 	_, err = db.Exec(statement)
-	if err != nil {
-		return err
-	}
-	return nil
+	return
 }
 
 func streamToByte(stream io.Reader) []byte {

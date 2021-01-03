@@ -37,8 +37,8 @@ functions:
       GO111MODULE: on
     environment:
       exec_timeout: "300s"
-    label:
-      com.openfaas.scale.min: 3
+    labels:
+      com.openfaas.scale.min: 2
   database:
     lang: golang-http
     handler: ./database
@@ -59,18 +59,18 @@ functions:
       - database-name
       - database-username
       - database-password
-    label:
+    labels:
       com.openfaas.scale.min: 2
   storage:
     lang: golang-http
     handler: ./storage
     image: e8kor/crawler:storage
     limits:
-      memory: 64Mi
-      cpu: 128m
+      memory: 512Mi
+      cpu: 512m
     requests:
-      memory: 32Mi
-      cpu: 128m
+      memory: 256Mi
+      cpu: 512m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
@@ -80,8 +80,8 @@ functions:
     secrets:
       - storage-access-key
       - storage-secret-key
-    label:
-      com.openfaas.scale.min: 3
+    labels:
+      com.openfaas.scale.min: 2
 configuration:
   templates:
     - name: golang-middleware

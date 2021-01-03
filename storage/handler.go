@@ -33,50 +33,43 @@ type Result struct {
 	Message       string    `json:"message"`
 }
 
+var client *minio.Client
+
 // Handle a serverless request
-func Handle(r handler.Request) (handler.Response, error) {
+func Handle(r handler.Request) (response handler.Response, err error) {
 	var (
 		destenationURL = r.Header.Get("X-Callback-Url")
 		ingestionTime  = time.Now()
-		response       handler.Response
-		result         Result
+		raw            []byte
 		payload        Entry
+		httpResponse   *http.Response
 	)
 
-	err := json.Unmarshal(r.Body, &payload)
+	err = json.Unmarshal(r.Body, &payload)
 	if err != nil {
-		return response, err
+		return
 	}
 
 	err = insert(payload)
 	if err != nil {
-		message := fmt.Sprintf("error: %s", err)
-		result = Result{
-			Status:        false,
-			Domain:        payload.Domain,
-			IngestionTime: ingestionTime,
-			Message:       message,
-		}
-	} else {
-		result = Result{
-			Status:        false,
-			Domain:        payload.Domain,
-			IngestionTime: ingestionTime,
-		}
+		return
 	}
 
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
-		raw, err := json.Marshal(result)
+		raw, err = json.Marshal(Result{
+			Status:        true,
+			Domain:        payload.Domain,
+			IngestionTime: ingestionTime,
+		})
 		if err != nil {
-			return response, err
+			return
 		}
-		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
-
+		httpResponse, err = http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 		if err != nil {
-			return response, err
+			return
 		}
-		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
+		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
 	}
 
 	response = handler.Response{
@@ -84,37 +77,32 @@ func Handle(r handler.Request) (handler.Response, error) {
 		StatusCode: http.StatusOK,
 		Header:     r.Header,
 	}
-	return response, nil
+	return
 }
 
-func insert(entry Entry) error {
+func insert(entry Entry) (err error) {
 	var (
-		ctx             = context.Background()
-		endpoint        = os.Getenv("MINIO_HOST")
-		accessKeyID     = getAPISecret("storage-access-key")
-		secretAccessKey = getAPISecret("storage-secret-key")
-		useSSL          = false
-		location        = "us-east-1"
+		ctx      = context.Background()
+		location = "us-east-1"
 	)
-	client, err := minio.New(
-		endpoint,
-		&minio.Options{
-			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-			Secure: useSSL,
-		},
-	)
+	if client == nil {
+		client, err = createClient()
+		if err != nil {
+			return
+		}
+	}
 	exists, err := client.BucketExists(ctx, entry.Domain)
 	if err == nil && exists {
 		log.Printf("We already own %s\n", entry.Domain)
 	} else if err != nil {
 		log.Fatalln(err)
-		return err
+		return
 	} else if !exists {
 		log.Printf("creating bucket %s\n", entry.Domain)
 		err = client.MakeBucket(ctx, entry.Domain, minio.MakeBucketOptions{Region: location})
 		if err != nil {
 			log.Println("error creating bucket", err)
-			return err
+			return
 		}
 		log.Printf("Successfully created %s\n", entry.Domain)
 	}
@@ -122,12 +110,12 @@ func insert(entry Entry) error {
 	raw, err := json.Marshal(entry.Data)
 	if err != nil {
 		log.Println("failed marshalling data", err)
-		return err
+		return
 	}
 	filename, err := randomFilename()
 	if err != nil {
 		log.Println("failed generating filename", err)
-		return err
+		return
 	}
 	path := fmt.Sprintf("created=%d/%s.json", entry.Created.Unix(), filename)
 	log.Printf("writing json at path %s", path)
@@ -143,10 +131,26 @@ func insert(entry Entry) error {
 	)
 	if err != nil {
 		log.Println("failed writing data", err)
-		return err
+		return
 	}
 	log.Printf("upload status: %v\n", status)
-	return nil
+	return
+}
+
+func createClient() (client *minio.Client, err error) {
+	var (
+		endpoint        = os.Getenv("MINIO_HOST")
+		accessKeyID     = getAPISecret("storage-access-key")
+		secretAccessKey = getAPISecret("storage-secret-key")
+		useSSL          = false
+	)
+	return minio.New(
+		endpoint,
+		&minio.Options{
+			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+			Secure: useSSL,
+		},
+	)
 }
 
 func randomFilename() (s string, err error) {
@@ -158,6 +162,7 @@ func randomFilename() (s string, err error) {
 	s = fmt.Sprintf("%x", b)
 	return
 }
+
 func streamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
@@ -170,5 +175,5 @@ func getAPISecret(secretName string) (secret string) {
 		panic(err)
 	}
 	secret = string(secretBytes)
-	return secret
+	return
 }

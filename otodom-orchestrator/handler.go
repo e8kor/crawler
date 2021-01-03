@@ -36,14 +36,13 @@ type Entry struct {
 	Data    []json.RawMessage `json:"data"`
 }
 
-func Handle(r handler.Request) (handler.Response, error) {
+func Handle(r handler.Request) (response handler.Response, err error) {
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	var (
-		response      handler.Response
 		urls          = query["url"]
 		gatewayPrefix = os.Getenv("GATEWAY_URL")
 	)
@@ -95,12 +94,11 @@ func Handle(r handler.Request) (handler.Response, error) {
 		StatusCode: http.StatusOK,
 		Header:     r.Header,
 	}
-	return response, nil
+	return
 }
 
-func collectPages(url string) []Page {
+func collectPages(url string) (pages []Page) {
 	var (
-		pages    []Page
 		lastPage Page
 		c        = colly.NewCollector()
 	)
@@ -143,20 +141,20 @@ func collectPages(url string) []Page {
 
 	log.Printf("found %d pages\n", len(pages))
 
-	return pages
+	return
 }
 
 func getEntries(gatewayPrefix string, page Page) (rawJSON []json.RawMessage, err error) {
 	response, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	err = json.Unmarshal(streamToByte(response.Body), &rawJSON)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return rawJSON, err
+	return
 }
 
 func streamToByte(stream io.Reader) []byte {
