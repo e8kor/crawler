@@ -119,11 +119,12 @@ func insert(entry Entry) (err error) {
 	}
 	path := fmt.Sprintf("created=%d/%s.json", entry.Created.Unix(), filename)
 	log.Printf("writing json at path %s", path)
+	buff := bytes.NewBuffer(raw)
 	status, err := client.PutObject(
 		ctx,
 		entry.Domain,
 		path,
-		bytes.NewBuffer(raw),
+		buff,
 		-1,
 		minio.PutObjectOptions{
 			ContentType: "application/json",

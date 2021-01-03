@@ -54,7 +54,10 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	}
 	for _, url := range urls {
 		pages := collectPages(url)
-		processPages(gatewayPrefix, pages)
+		err = processPages(gatewayPrefix, pages)
+		if err != nil {
+			return
+		}
 	}
 
 	response = handler.Response{
@@ -127,12 +130,14 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 
 	go func() {
 		for json := range ch {
+			log.Printf("adding %d datasets\n", len(json))
 			responses = append(responses, json...)
 		}
 	}()
-	log.Printf("collected %d datasets\n", len(responses))
 	wg.Wait()
 	close(ch)
+
+	log.Printf("collected %d datasets\n", len(responses))
 
 	raw, err = json.Marshal(Entry{
 		Created: time.Now(),
@@ -140,19 +145,22 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 		Data:    responses,
 	})
 	if err != nil {
+		log.Println("error while marshalling Entry", err)
 		return
 	}
 
 	log.Println("sending database persist request")
 	httpResponse, err = http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
 	if err != nil {
+		log.Println("error when seding database persist request", err)
 		return
 	}
-
 	log.Printf("received database response persist payload: %v\n", httpResponse)
+
 	log.Println("sending storage persist request")
 	httpResponse, err = http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
 	if err != nil {
+		log.Println("error when seding storage persist request", err)
 		return
 	}
 	log.Printf("received storage response persist payload: %v\n", httpResponse)
