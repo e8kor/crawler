@@ -125,7 +125,7 @@ func insert(entry Entry) error {
 		log.Println("failed generating filename", err)
 		return err
 	}
-	path := fmt.Sprintf("/created=%d/%s.json", entry.Created.Unix(), filename)
+	path := fmt.Sprintf("created=%d/%s.json", entry.Created.Unix(), filename)
 	log.Printf("writing json at path %s", path)
 	status, err := client.PutObject(
 		ctx,
