@@ -7,11 +7,11 @@ functions:
     handler: ./otodom-orchestrator
     image: e8kor/crawler:otodom-orchestrator
     limits:
-      memory: 64Mi
-      cpu: 128m
+      memory: 128Mi
+      cpu: 256m
     requests:
-      memory: 32Mi
-      cpu: 128m
+      memory: 64Mi
+      cpu: 256m
     annotations:
       schedule: "*/5 * * * *"
       topic: cron-function
@@ -21,7 +21,7 @@ functions:
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
-      exec_timeout: "2100s"
+      exec_timeout: "10m"
   otodom-scrapper:
     lang: golang-http
     handler: ./otodom-scrapper
@@ -38,17 +38,17 @@ functions:
     environment:
       exec_timeout: "300s"
     labels:
-      com.openfaas.scale.min: 2
+      com.openfaas.scale.min: 3
   database:
     lang: golang-http
     handler: ./database
     image: e8kor/crawler:database
     limits:
-      memory: 64Mi
-      cpu: 128m
+      memory: 128Mi
+      cpu: 256m
     requests:
-      memory: 32Mi
-      cpu: 128m
+      memory: 64Mi
+      cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
@@ -66,11 +66,11 @@ functions:
     handler: ./storage
     image: e8kor/crawler:storage
     limits:
-      memory: 512Mi
-      cpu: 512m
+      memory: 128Mi
+      cpu: 256m
     requests:
-      memory: 256Mi
-      cpu: 512m
+      memory: 64Mi
+      cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
