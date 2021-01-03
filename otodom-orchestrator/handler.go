@@ -54,9 +54,7 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	}
 	for _, url := range urls {
 		pages := collectPages(url)
-		for _, page := range pages {
-			processPage(gatewayPrefix, page)
-		}
+		processPages(gatewayPrefix, pages)
 	}
 
 	response = handler.Response{
