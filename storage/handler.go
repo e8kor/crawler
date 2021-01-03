@@ -103,18 +103,22 @@ func insert(entry Entry) error {
 			Secure: useSSL,
 		},
 	)
-	err = client.MakeBucket(ctx, entry.Domain, minio.MakeBucketOptions{Region: location})
-	if err != nil {
-		exists, errBucketExists := client.BucketExists(ctx, entry.Domain)
-		if errBucketExists == nil && exists {
-			log.Printf("We already own %s\n", entry.Domain)
-		} else {
-			log.Fatalln(err)
+	exists, err := client.BucketExists(ctx, entry.Domain)
+	if err == nil && exists {
+		log.Printf("We already own %s\n", entry.Domain)
+	} else if err != nil {
+		log.Fatalln(err)
+		return err
+	} else if !exists {
+		log.Printf("creating bucket %s\n", entry.Domain)
+		err = client.MakeBucket(ctx, entry.Domain, minio.MakeBucketOptions{Region: location})
+		if err != nil {
+			log.Printf("error creating bucket", err)
 			return err
 		}
-	} else {
 		log.Printf("Successfully created %s\n", entry.Domain)
 	}
+
 	raw, err := json.Marshal(entry.Data)
 	if err != nil {
 		log.Println("failed marshalling data", err)

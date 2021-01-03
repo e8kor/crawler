@@ -21,7 +21,7 @@ functions:
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
-      exec_timeout: "2400s"
+      exec_timeout: "2100s"
   otodom-scrapper:
     lang: golang-http
     handler: ./otodom-scrapper
@@ -37,6 +37,8 @@ functions:
       GO111MODULE: on
     environment:
       exec_timeout: "300s"
+    label:
+      com.openfaas.scale.min: 3
   database:
     lang: golang-http
     handler: ./database
@@ -57,6 +59,8 @@ functions:
       - database-name
       - database-username
       - database-password
+    label:
+      com.openfaas.scale.min: 2
   storage:
     lang: golang-http
     handler: ./storage
@@ -72,9 +76,12 @@ functions:
       GO111MODULE: on
     environment:
       MINIO_HOST: "192.168.0.214:9000"
+      exec_timeout: "300s"
     secrets:
       - storage-access-key
       - storage-secret-key
+    label:
+      com.openfaas.scale.min: 3
 configuration:
   templates:
     - name: golang-middleware
