@@ -126,7 +126,7 @@ func insert(entry Entry) error {
 	status, err := client.PutObject(
 		ctx,
 		entry.Domain,
-		fmt.Sprintf("/created=%d/%d.json", entry.Created.Unix(), filename),
+		fmt.Sprintf("/created=%d/%s.json", entry.Created.Unix(), filename),
 		bytes.NewBuffer(raw),
 		-1,
 		minio.PutObjectOptions{
