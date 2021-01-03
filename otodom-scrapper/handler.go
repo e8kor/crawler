@@ -15,12 +15,13 @@ import (
 
 // Entry stores Otodom dashboard structure
 type Entry struct {
-	Title  string `json:"title"`
-	Name   string `json:"name"`
-	Region string `json:"region"`
-	Price  string `json:"price"`
-	Area   string `json:"area"`
-	Link   string `json:"link"`
+	Title      string `json:"title"`
+	Name       string `json:"name"`
+	Region     string `json:"region"`
+	Price      string `json:"price"`
+	TotalPrice string `json:"total_price"`
+	Area       string `json:"area"`
+	Link       string `json:"link"`
 }
 
 func Handle(r handler.Request) (response handler.Response, err error) {
@@ -75,12 +76,13 @@ func collectEntries(url string) (entries []Entry) {
 
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
-			Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
-			Name:   e.ChildText("div.offer-item-details-bottom > ul > li"),
-			Region: e.ChildText("div.offer-item-details > header > p"),
-			Price:  e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m"),
-			Area:   e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area"),
-			Link:   e.ChildAttr("div.offer-item-details > header > h3 > a", "href"),
+			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
+			Name:       e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
+			Region:     e.ChildText("div.offer-item-details > header > p"),
+			Price:      e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m"),
+			TotalPrice: e.ChildText("div.offer-item-details > ul > li.offer-item-price"),
+			Area:       e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area"),
+			Link:       e.ChildAttr("div.offer-item-details > header > h3 > a", "href"),
 		}
 		entries = append(entries, entry)
 	})
