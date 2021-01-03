@@ -6,6 +6,15 @@ functions:
     lang: golang-http
     handler: ./otodom-orchestrator
     image: e8kor/crawler:otodom-orchestrator
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    annotations:
+      schedule: "*/5 * * * *"
+      topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
@@ -20,6 +29,12 @@ functions:
     lang: golang-http
     handler: ./otodom-scrapper
     image: e8kor/crawler:otodom-scrapper
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
@@ -31,6 +46,12 @@ functions:
     lang: golang-http
     handler: ./database
     image: e8kor/crawler:database
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
@@ -48,6 +69,12 @@ functions:
     lang: golang-http
     handler: ./storage
     image: e8kor/crawler:storage
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -121,14 +120,13 @@ func insert(entry Entry) (err error) {
 	path := fmt.Sprintf("created=%d/%s.json", entry.Created.Unix(), filename)
 	log.Printf("writing json at path %s", path)
 	buff := bytes.NewBuffer(raw)
-	size := int64(binary.Size(buff))
 
 	status, err := client.PutObject(
 		ctx,
 		entry.Domain,
 		path,
 		buff,
-		size,
+		-1,
 		minio.PutObjectOptions{
 			ContentType: "application/json",
 		},
