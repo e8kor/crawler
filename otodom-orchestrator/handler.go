@@ -167,17 +167,19 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 	return
 }
 
-func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) (err error) {
+func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) {
 	var data []json.RawMessage
 
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
 	response, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
 	if err != nil {
+		log.Println("failed to get response from scrapper", err)
 		return
 	}
 
 	err = json.Unmarshal(streamToByte(response.Body), &data)
 	if err != nil {
+		log.Println("failed to read response from scrapper", err)
 		return
 	}
 	ch <- data
