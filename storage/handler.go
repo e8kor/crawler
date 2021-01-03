@@ -113,7 +113,7 @@ func insert(entry Entry) error {
 		log.Printf("creating bucket %s\n", entry.Domain)
 		err = client.MakeBucket(ctx, entry.Domain, minio.MakeBucketOptions{Region: location})
 		if err != nil {
-			log.Printf("error creating bucket", err)
+			log.Println("error creating bucket", err)
 			return err
 		}
 		log.Printf("Successfully created %s\n", entry.Domain)
