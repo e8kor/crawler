@@ -30,7 +30,7 @@ type Entry struct {
 type Result struct {
 	Status        bool      `json:"status"`
 	Domain        string    `json:"domain"`
-	IngestionTime time.Time `json:"ingestion-time"`
+	IngestionTime time.Time `json:"ingestion_time"`
 	Message       string    `json:"message"`
 }
 
@@ -50,23 +50,24 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 
 	err = insert(payload)
-	if err != nil {
-		message := fmt.Sprintf("error: %s", err)
-		result = Result{
-			Status:        false,
-			Domain:        payload.Domain,
-			IngestionTime: ingestionTime,
-			Message:       message,
-		}
-	} else {
-		result = Result{
-			Status:        false,
-			Domain:        payload.Domain,
-			IngestionTime: ingestionTime,
-		}
-	}
+
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
+		if err != nil {
+			message := fmt.Sprintf("error: %s", err)
+			result = Result{
+				Status:        false,
+				Domain:        payload.Domain,
+				IngestionTime: ingestionTime,
+				Message:       message,
+			}
+		} else {
+			result = Result{
+				Status:        true,
+				Domain:        payload.Domain,
+				IngestionTime: ingestionTime,
+			}
+		}
 		raw, err := json.Marshal(result)
 		if err != nil {
 			return response, err

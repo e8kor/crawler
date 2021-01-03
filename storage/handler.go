@@ -29,7 +29,7 @@ type Entry struct {
 type Result struct {
 	Status        bool      `json:"status"`
 	Domain        string    `json:"domain"`
-	IngestionTime time.Time `json:"ingestion-time"`
+	IngestionTime time.Time `json:"ingestion_time"`
 	Message       string    `json:"message"`
 }
 
