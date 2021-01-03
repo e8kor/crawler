@@ -94,7 +94,7 @@ func insert(entry Entry) error {
 		accessKeyID     = getAPISecret("storage-access-key")
 		secretAccessKey = getAPISecret("storage-secret-key")
 		useSSL          = false
-		location        = ""
+		location        = "us-east-1"
 	)
 	client, err := minio.New(
 		endpoint,
@@ -117,16 +117,20 @@ func insert(entry Entry) error {
 	}
 	raw, err := json.Marshal(entry.Data)
 	if err != nil {
+		log.Println("failed marshalling data", err)
 		return err
 	}
 	filename, err := randomFilename()
 	if err != nil {
+		log.Println("failed generating filename", err)
 		return err
 	}
+	path := fmt.Sprintf("/created=%d/%s.json", entry.Created.Unix(), filename)
+	log.Printf("writing json at path %s", path)
 	status, err := client.PutObject(
 		ctx,
 		entry.Domain,
-		fmt.Sprintf("/created=%d/%s.json", entry.Created.Unix(), filename),
+		path,
 		bytes.NewBuffer(raw),
 		-1,
 		minio.PutObjectOptions{
@@ -134,11 +138,13 @@ func insert(entry Entry) error {
 		},
 	)
 	if err != nil {
+		log.Println("failed writing data", err)
 		return err
 	}
 	log.Printf("upload status: %v\n", status)
 	return nil
 }
+
 func randomFilename() (s string, err error) {
 	b := make([]byte, 8)
 	_, err = rand.Read(b)
