@@ -125,13 +125,13 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 	ch := make(chan []json.RawMessage)
 	for _, page := range pages {
 		wg.Add(1)
-		go getEntries(ch, gatewayPrefix, page)
+		go getEntries(wg, ch, gatewayPrefix, page)
 	}
 
 	go func() {
 		for json := range ch {
-			log.Printf("adding %d datasets\n", len(json))
 			responses = append(responses, json...)
+			log.Printf("added %d datasets, total count is %d \n", len(json), len(responses))
 		}
 	}()
 	wg.Wait()
@@ -167,7 +167,8 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 	return
 }
 
-func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) {
+func getEntries(wg sync.WaitGroup, ch chan []json.RawMessage, gatewayPrefix string, page Page) {
+	defer wg.Done()
 	var data []json.RawMessage
 
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
@@ -182,6 +183,9 @@ func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) {
 		log.Println("failed to read response from scrapper", err)
 		return
 	}
+
+	log.Println("received response from crawler for %s\n", page.URL)
+
 	ch <- data
 	return
 }
