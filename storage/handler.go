@@ -3,6 +3,7 @@ package function
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -64,28 +65,24 @@ func Handle(r handler.Request) (handler.Response, error) {
 		}
 	}
 
-	if destenationURL == "" {
-		response = handler.Response{
-			Body:       []byte(`{ "message": "saved to storage"}`),
-			StatusCode: http.StatusOK,
+	if destenationURL != "" {
+		log.Printf("using callback %s\n", destenationURL)
+		raw, err := json.Marshal(result)
+		if err != nil {
+			return response, err
 		}
-		return response, nil
-	}
+		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 
-	log.Printf("using callback %s\n", destenationURL)
-	raw, err := json.Marshal(result)
-	if err != nil {
-		return response, err
-	}
-	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
+		if err != nil {
+			return response, err
+		}
+		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
 	}
 
 	response = handler.Response{
-		Body:       streamToByte(destenationResponse.Body),
-		StatusCode: destenationResponse.StatusCode,
-		Header:     destenationResponse.Header,
+		Body:       []byte(`{ "message": "saved to storage"}`),
+		StatusCode: http.StatusOK,
+		Header:     r.Header,
 	}
 	return response, nil
 }
@@ -122,10 +119,14 @@ func insert(entry Entry) error {
 	if err != nil {
 		return err
 	}
+	filename, err := randomFilename()
+	if err != nil {
+		return err
+	}
 	status, err := client.PutObject(
 		ctx,
 		entry.Domain,
-		fmt.Sprintf("/created=%d/%d.json", entry.Created.Unix(), entry.Created.Unix()),
+		fmt.Sprintf("/created=%d/%d.json", entry.Created.Unix(), filename),
 		bytes.NewBuffer(raw),
 		-1,
 		minio.PutObjectOptions{
@@ -138,7 +139,15 @@ func insert(entry Entry) error {
 	log.Printf("upload status: %v\n", status)
 	return nil
 }
-
+func randomFilename() (s string, err error) {
+	b := make([]byte, 8)
+	_, err = rand.Read(b)
+	if err != nil {
+		return
+	}
+	s = fmt.Sprintf("%x", b)
+	return
+}
 func streamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)

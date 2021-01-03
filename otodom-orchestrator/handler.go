@@ -46,7 +46,6 @@ func Handle(r handler.Request) (handler.Response, error) {
 		response      handler.Response
 		urls          = query["url"]
 		gatewayPrefix = os.Getenv("GATEWAY_URL")
-		results       []json.RawMessage
 	)
 
 	if urls == nil {
@@ -54,9 +53,8 @@ func Handle(r handler.Request) (handler.Response, error) {
 	}
 	for _, url := range urls {
 		pages := collectPages(url)
-		JsonSlice := make([][]json.RawMessage, len(pages))
 		wg := sync.WaitGroup{}
-		for i, page := range pages {
+		for _, page := range pages {
 			wg.Add(1)
 			go func(page Page) {
 				defer wg.Done()
@@ -65,47 +63,41 @@ func Handle(r handler.Request) (handler.Response, error) {
 				if err != nil {
 					return
 				}
-				log.Printf("response from otodom crawler url %s\n%v\n", page.URL, rawJSON)
-				JsonSlice[i] = rawJSON
+
+				raw, err := json.Marshal(Entry{
+					Created: time.Now(),
+					Domain:  "otodom",
+					Data:    rawJSON,
+				})
+				if err != nil {
+					return
+				}
+
+				log.Printf("sending database persist request for url: %s\n", page.URL)
+				databaseResponse, err := http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+				if err != nil {
+					return
+				}
+
+				log.Printf("received database response persist payload: %v\n", databaseResponse)
+				storageResponse, err := http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+				if err != nil {
+					return
+				}
+				log.Printf("received storage response persist payload: %v\n", storageResponse)
 			}(page)
 		}
 		wg.Wait()
-
-		results = append(results, flatten(JsonSlice)...)
 	}
 
-	raw, err := json.Marshal(Entry{
-		Created: time.Now(),
-		Domain:  "otodom",
-		Data:    results,
-	})
-	if err != nil {
-		return response, err
-	}
-
-	log.Printf("sending persist payload: %s\n", string(raw))
-	databaseResponse, err := http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
-	}
-
-	log.Printf("received database response persist payload: %v\n", databaseResponse)
-	storageResponse, err := http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
-	}
-	log.Printf("received storage response persist payload: %v\n", storageResponse)
 	response = handler.Response{
-		Body:       []byte("saga completed"),
-		StatusCode: databaseResponse.StatusCode,
-		Header:     databaseResponse.Header,
+		Body:       []byte(`{ "message": "saga completed"}`),
+		StatusCode: http.StatusOK,
+		Header:     r.Header,
 	}
 	return response, nil
 }
 
-func flatten(m [][]json.RawMessage) []json.RawMessage {
-	return m[0][:cap(m[0])]
-}
 func collectPages(url string) []Page {
 	var (
 		pages    []Page

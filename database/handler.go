@@ -65,28 +65,23 @@ func Handle(r handler.Request) (handler.Response, error) {
 			IngestionTime: ingestionTime,
 		}
 	}
-	if destenationURL == "" {
-		response = handler.Response{
-			Body:       []byte(`{ "message": "saved to database"}`),
-			StatusCode: http.StatusOK,
+	if destenationURL != "" {
+		log.Printf("using callback %s\n", destenationURL)
+		raw, err := json.Marshal(result)
+		if err != nil {
+			return response, err
 		}
-		return response, err
-	}
-
-	log.Printf("using callback %s\n", destenationURL)
-	raw, err := json.Marshal(result)
-	if err != nil {
-		return response, err
-	}
-	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
+		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
+		if err != nil {
+			return response, err
+		}
+		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
 	}
 
 	response = handler.Response{
-		Body:       streamToByte(destenationResponse.Body),
-		StatusCode: destenationResponse.StatusCode,
-		Header:     destenationResponse.Header,
+		Body:       []byte(`{ "message": "saved to database"}`),
+		StatusCode: http.StatusOK,
+		Header:     r.Header,
 	}
 	return response, err
 }

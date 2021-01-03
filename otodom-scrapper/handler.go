@@ -50,23 +50,22 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if err != nil {
 		return response, err
 	}
-
-	if destenationURL == "" {
-		response = handler.Response{
-			Body:       raw,
-			StatusCode: http.StatusOK,
+	if destenationURL != "" {
+		log.Printf("using callback %s\n", destenationURL)
+		if err != nil {
+			return response, err
 		}
-		return response, nil
+		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
+		if err != nil {
+			return response, err
+		}
+		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
 	}
 
-	destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		return response, err
-	}
 	response = handler.Response{
-		Body:       streamToByte(destenationResponse.Body),
-		StatusCode: destenationResponse.StatusCode,
-		Header:     destenationResponse.Header,
+		Body:       raw,
+		StatusCode: http.StatusOK,
+		Header:     r.Header,
 	}
 	return response, nil
 }
