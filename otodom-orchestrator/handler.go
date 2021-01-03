@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -51,23 +52,22 @@ func Handle(r handler.Request) (handler.Response, error) {
 	if urls == nil {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
+	wg := sync.WaitGroup{}
 	for _, url := range urls {
 		for _, page := range collectPages(url) {
-			log.Printf("sending otodom crawler request for %s\n", page.URL)
-			crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom?url=%s", gatewayPrefix, page.URL))
-			if err != nil {
-				return response, err
-			}
-
-			var rawJSON []json.RawMessage
-			err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
-			if err != nil {
-				return response, err
-			}
-
-			results = append(results, rawJSON...)
+			wg.Add(1)
+			go func(page Page) {
+				log.Printf("sending otodom crawler request for %s\n", page.URL)
+				rawJSON, err := getEntries(gatewayPrefix, page)
+				if err != nil {
+					return
+				}
+				results = append(results, rawJSON...)
+			}(page)
+			wg.Done()
 		}
 	}
+	wg.Wait()
 
 	raw, err := json.Marshal(Entry{
 		Created: time.Now(),
@@ -145,6 +145,20 @@ func collectPages(url string) []Page {
 
 	return pages
 }
+
+func getEntries(gatewayPrefix string, page Page) (rawJSON []json.RawMessage, err error) {
+	crawlerResponse, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(streamToByte(crawlerResponse.Body), &rawJSON)
+	if err != nil {
+		return nil, err
+	}
+	return rawJSON, err
+}
+
 func streamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
