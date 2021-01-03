@@ -94,7 +94,7 @@ func insert(entry Entry) error {
 	var (
 		ctx             = context.Background()
 		endpoint        = os.Getenv("MINIO_HOST")
-		accessKeyID     = getAPISecret("storage-assess-key")
+		accessKeyID     = getAPISecret("storage-access-key")
 		secretAccessKey = getAPISecret("storage-secret-key")
 		useSSL          = true
 		location        = ""
