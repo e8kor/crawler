@@ -23,6 +23,8 @@ type Page struct {
 	URL  string
 	Page int
 }
+
+// PageSorter is API for Page collection
 type PageSorter []Page
 
 func (a PageSorter) Len() int           { return len(a) }
@@ -52,41 +54,9 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	}
 	for _, url := range urls {
 		pages := collectPages(url)
-		wg := sync.WaitGroup{}
 		for _, page := range pages {
-			wg.Add(1)
-			go func(page Page) {
-				defer wg.Done()
-				log.Printf("sending otodom crawler request for %s\n", page.URL)
-				rawJSON, err := getEntries(gatewayPrefix, page)
-				if err != nil {
-					return
-				}
-
-				raw, err := json.Marshal(Entry{
-					Created: time.Now(),
-					Domain:  "otodom",
-					Data:    rawJSON,
-				})
-				if err != nil {
-					return
-				}
-
-				log.Printf("sending database persist request for url: %s\n", page.URL)
-				databaseResponse, err := http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-				if err != nil {
-					return
-				}
-
-				log.Printf("received database response persist payload: %v\n", databaseResponse)
-				storageResponse, err := http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-				if err != nil {
-					return
-				}
-				log.Printf("received storage response persist payload: %v\n", storageResponse)
-			}(page)
+			processPage(gatewayPrefix, page)
 		}
-		wg.Wait()
 	}
 
 	response = handler.Response{
@@ -144,16 +114,69 @@ func collectPages(url string) (pages []Page) {
 	return
 }
 
-func getEntries(gatewayPrefix string, page Page) (rawJSON []json.RawMessage, err error) {
+func processPage(gatewayPrefix string, page Page) (err error) {
+	var (
+		responses    []json.RawMessage
+		wg           sync.WaitGroup
+		raw          []byte
+		httpResponse *http.Response
+	)
+	ch := make(chan []json.RawMessage)
+	wg.Add(1)
+	go func(page Page) {
+		defer wg.Done()
+		log.Printf("sending otodom crawler request for %s\n", page.URL)
+		err := getEntries(ch, gatewayPrefix, page)
+		if err != nil {
+			return
+		}
+	}(page)
+
+	go func() {
+		for json := range ch {
+			responses = append(responses, json...)
+		}
+	}()
+	log.Printf("collected %d datasets\n", len(responses))
+	wg.Wait()
+	close(ch)
+
+	raw, err = json.Marshal(Entry{
+		Created: time.Now(),
+		Domain:  "otodom",
+		Data:    responses,
+	})
+	if err != nil {
+		return
+	}
+
+	log.Printf("sending database persist request for url: %s\n", page.URL)
+	httpResponse, err = http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return
+	}
+
+	log.Printf("received database response persist payload: %v\n", httpResponse)
+	httpResponse, err = http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return
+	}
+	log.Printf("received storage response persist payload: %v\n", httpResponse)
+	return
+}
+
+func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) (err error) {
+	var data []json.RawMessage
 	response, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(streamToByte(response.Body), &rawJSON)
+	err = json.Unmarshal(streamToByte(response.Body), &data)
 	if err != nil {
 		return
 	}
+	ch <- data
 	return
 }
 
