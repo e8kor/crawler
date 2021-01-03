@@ -57,6 +57,7 @@ func Handle(r handler.Request) (handler.Response, error) {
 		for _, page := range collectPages(url) {
 			wg.Add(1)
 			go func(page Page) {
+				defer wg.Done()
 				log.Printf("sending otodom crawler request for %s\n", page.URL)
 				rawJSON, err := getEntries(gatewayPrefix, page)
 				if err != nil {
@@ -64,7 +65,6 @@ func Handle(r handler.Request) (handler.Response, error) {
 				}
 				results = append(results, rawJSON...)
 			}(page)
-			wg.Done()
 		}
 	}
 	wg.Wait()

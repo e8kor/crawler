@@ -96,7 +96,7 @@ func insert(entry Entry) error {
 		endpoint        = os.Getenv("MINIO_HOST")
 		accessKeyID     = getAPISecret("storage-access-key")
 		secretAccessKey = getAPISecret("storage-secret-key")
-		useSSL          = true
+		useSSL          = false
 		location        = ""
 	)
 	client, err := minio.New(

@@ -71,7 +71,7 @@ functions:
       DOCKER_CLI_EXPERIMENTAL: enabled
       GO111MODULE: on
     environment:
-      MINIO_HOST: "192.168.0.211"
+      MINIO_HOST: "192.168.0.214:9000"
     secrets:
       - storage-access-key
       - storage-secret-key
