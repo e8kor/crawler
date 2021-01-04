@@ -38,8 +38,8 @@ jobs:
       - name: Prepare core vendor dependencies
         working-directory: ./otodom
         run: |
-          go vendor ./storage
-          go vendor ./database
+          go mod vendor ./storage
+          go mod vendor ./database
       - name: Get core templates
         run: |
           faas-cli template pull stack
@@ -53,8 +53,8 @@ jobs:
       - name: Prepare otodom vendor dependencies
         working-directory: ./otodom
         run: |
-          go vendor ./crawler
-          go vendor ./orchestrator
+          go mod vendor ./crawler
+          go mod vendor ./orchestrator
       - name: Get otodom templates
         working-directory: ./otodom
         run: |
