@@ -26,6 +26,28 @@ type Entry struct {
 	Data    []json.RawMessage `json:"data"`
 }
 
+func (entry *Entry) prepareInsertStatement() (statement string, err error) {
+	var (
+		inserts []string
+		time    = entry.Created.Format(time.RFC3339)
+		bytes   []byte
+	)
+	for _, entry := range entry.Data {
+		bytes, err = entry.MarshalJSON()
+		if err != nil {
+			return
+		}
+		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, bytes))
+	}
+	if inserts == nil {
+		log.Println("no records to insert")
+		return
+	}
+	insertStatement := strings.Join(inserts[:], ", ")
+	statement = fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
+	return
+}
+
 // Result is result of data storing
 type Result struct {
 	Status        bool      `json:"status"`
@@ -94,10 +116,11 @@ func insert(entry Entry) (err error) {
 		user     = getAPISecret("database-username")
 		password = getAPISecret("database-password")
 		dbname   = getAPISecret("database-name")
-		inserts  []string
-		time     = entry.Created.Format(time.RFC3339)
-		bytes    []byte
 	)
+	statement, err := entry.prepareInsertStatement()
+	if err != nil {
+		return
+	}
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -105,19 +128,6 @@ func insert(entry Entry) (err error) {
 	}
 	defer db.Close()
 
-	for _, entry := range entry.Data {
-		bytes, err = entry.MarshalJSON()
-		if err != nil {
-			return
-		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, bytes))
-	}
-	if inserts == nil {
-		log.Println("no records to insert")
-		return
-	}
-	insertStatement := strings.Join(inserts[:], ", ")
-	statement := fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
 	_, err = db.Exec(statement)
 	return
 }
