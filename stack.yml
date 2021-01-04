@@ -3,7 +3,7 @@ provider:
   name: openfaas
 functions:
   database:
-    lang: golang-http
+    lang: golang-middleware
     handler: ./database
     image: e8kor/crawler:database
     limits:
@@ -24,7 +24,7 @@ functions:
     labels:
       com.openfaas.scale.min: 1
   storage:
-    lang: golang-http
+    lang: golang-middleware
     handler: ./storage
     image: e8kor/crawler:storage
     limits:
