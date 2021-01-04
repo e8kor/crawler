@@ -13,7 +13,6 @@ functions:
       cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
-      GO111MODULE: on
     environment:
       PG_HOST: "192.168.0.211"
       PG_PORT: "5432"
@@ -35,7 +34,6 @@ functions:
       cpu: 256m
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
-      GO111MODULE: on
     environment:
       MINIO_HOST: "192.168.0.214:9000"
       exec_timeout: "1m"
