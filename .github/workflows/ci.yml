@@ -43,6 +43,14 @@ jobs:
         working-directory: ./storage
         run: |
           go mod vendor
+      - name: Prepare otodom orchestrator vendor dependencies
+        working-directory: ./otodom/orchestrator
+        run: |
+          go mod vendor
+      - name: Prepare otodom crawler vendor dependencies
+        working-directory: ./otodom/crawler
+        run: |
+          go mod vendor
       - name: Get core templates
         run: |
           faas-cli template pull stack
@@ -53,24 +61,4 @@ jobs:
         if: success() && github.ref == 'refs/heads/main'
         run: |
           faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
-      - name: Prepare otodom orchestrator vendor dependencies
-        working-directory: ./otodom/orchestrator
-        run: |
-          go mod vendor
-      - name: Prepare otodom crawler vendor dependencies
-        working-directory: ./otodom/crawler
-        run: |
-          go mod vendor
-      - name: Get otodom templates
-        working-directory: ./otodom
-        run: |
-          faas-cli template pull stack
-      - name: Build multi platform otodom functions
-        working-directory: ./otodom
-        run: |
-          faas-cli publish --platforms linux/arm,linux/arm64
-      - name: deploy otodom functions
-        working-directory: ./otodom
-        if: success() && github.ref == 'refs/heads/main'
-        run: |
-          faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
+     
