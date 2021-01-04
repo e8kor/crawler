@@ -35,14 +35,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      # - name: Prepare core database vendor dependencies
-      #   working-directory: ./database
-      #   run: |
-      #     go mod vendor
-      # - name: Prepare core storage vendor dependencies
-      #   working-directory: ./storage
-      #   run: |
-      #     go mod vendor
+      - name: Prepare core database vendor dependencies
+        working-directory: ./commons
+        run: |
+          go install .
       - name: Get core templates
         run: |
           faas-cli template pull stack
@@ -53,14 +49,10 @@ jobs:
         if: success() && github.ref == 'refs/heads/main'
         run: |
           faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
-      # - name: Prepare otodom orchestrator vendor dependencies
-      #   working-directory: ./otodom/orchestrator
-      #   run: |
-      #     go mod vendor
-      # - name: Prepare otodom crawler vendor dependencies
-      #   working-directory: ./otodom/crawler
-      #   run: |
-      #     go mod vendor
+      - name: Prepare otodom orchestrator vendor dependencies
+        working-directory: ./otodom/commons
+        run: |
+          go install .
       - name: Get otodom templates
         working-directory: ./otodom
         run: |
