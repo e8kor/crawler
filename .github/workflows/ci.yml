@@ -36,11 +36,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Prepare core database vendor dependencies
-        working-directory: ./otodom/database
+        working-directory: ./database
         run: |
           go mod vendor
       - name: Prepare core storage vendor dependencies
-        working-directory: ./otodom/storage
+        working-directory: ./storage
         run: |
           go mod vendor
       - name: Get core templates
