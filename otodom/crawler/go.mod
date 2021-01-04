@@ -1,4 +1,4 @@
-module otodom-scraper/main
+module crawler/otodom/crawler
 
 go 1.15
 
