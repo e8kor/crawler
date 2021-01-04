@@ -26,16 +26,19 @@ jobs:
       - name: Install buildx as default
         run: |
           docker buildx install
-      - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-      - name: Get templates
-        run: |
-          faas-cli template pull stack
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Prepare core vendor dependencies
+        working-directory: ./otodom
+        run: |
+          go vendor ./storage
+          go vendor ./database
+      - name: Get core templates
+        run: |
+          faas-cli template pull stack
       - name: Build multi platform core functions
         run: |
           faas-cli publish --platforms linux/arm,linux/arm64
@@ -43,6 +46,15 @@ jobs:
         if: success() && github.ref == 'refs/heads/main'
         run: |
           faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
+      - name: Prepare otodom vendor dependencies
+        working-directory: ./otodom
+        run: |
+          go vendor ./crawler
+          go vendor ./orchestrator
+      - name: Get otodom templates
+        working-directory: ./otodom
+        run: |
+          faas-cli template pull stack
       - name: Build multi platform otodom functions
         working-directory: ./otodom
         run: |

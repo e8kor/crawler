@@ -1,0 +1,11 @@
+# github.com/e8kor/crawler v0.0.0-20210104182532-faf38d3ccb2d
+## explicit
+github.com/e8kor/crawler/commons
+# github.com/lib/pq v1.9.0
+## explicit
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
+# github.com/openfaas/templates-sdk v0.0.0-20200723092016-0ebf61253625
+## explicit
+github.com/openfaas/templates-sdk/go-http

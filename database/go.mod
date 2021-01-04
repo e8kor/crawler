@@ -1,7 +1,10 @@
-module otodom-scraper/main
+module crawler/database
 
 go 1.15
 
 require github.com/lib/pq v1.9.0
 
-require github.com/openfaas/templates-sdk v0.0.0-20200723092016-0ebf61253625
+require (
+	github.com/e8kor/crawler v0.0.0-20210104182532-faf38d3ccb2d
+	github.com/openfaas/templates-sdk v0.0.0-20200723092016-0ebf61253625
+)

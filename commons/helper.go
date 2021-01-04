@@ -1,6 +1,7 @@
 package commons
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -8,10 +9,13 @@ import (
 )
 
 // StreamToByte convert stream of bytes to byte array
-func StreamToByte(stream io.Reader) (bytes []byte) {
+func StreamToByte(stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
-	bytes = buf.ReadFrom(stream)
-	return
+	_, err := buf.ReadFrom(stream)
+	if err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }
 
 // GetAPISecret is helper to read secrets in openfaas

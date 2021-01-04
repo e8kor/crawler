@@ -1,4 +1,4 @@
-module otodom-scraper/main
+module crawler/otodom/orchestrator
 
 go 1.15
 
