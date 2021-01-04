@@ -1,0 +1,1 @@
+replace github.com/e8kor/crawler/commons => ../commons

@@ -9,18 +9,19 @@ import (
 
 	"github.com/gocolly/colly/v2"
 
+	framework "github.com/e8kor/crawler/commons"
 	otodom "github.com/e8kor/crawler/otodom/commons"
-
-	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
-func Handle(r handler.Request) (response handler.Response, err error) {
+//Handle is main function entrypoint
+func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
 		entries      []otodom.Entry
 		httpResponse *http.Response
 	)
-	query, err := url.ParseQuery(r.QueryString)
+	query, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
+		framework.HandleFailure(w, err)
 		return
 	}
 
@@ -37,13 +38,11 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 		entries = append(entries, collectEntries(url)...)
 	}
 
-	raw, err := json.Marshal(entries)
-	if err != nil {
-		return
-	}
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
+		raw, err := json.Marshal(entries)
 		if err != nil {
+			framework.HandleFailure(w, err)
 			return
 		}
 		httpResponse, err = http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
@@ -53,11 +52,7 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
 	}
 
-	response = handler.Response{
-		Body:       raw,
-		StatusCode: http.StatusOK,
-		Header:     r.Header,
-	}
+	framework.HandleSuccess(w, entries)
 	return
 }
 

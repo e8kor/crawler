@@ -17,12 +17,11 @@ import (
 	otodom "github.com/e8kor/crawler/otodom/commons"
 
 	"github.com/gocolly/colly/v2"
-	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 //Handle is main function entrypoint
-func Handle(r handler.Request) (response handler.Response, err error) {
-	query, err := url.ParseQuery(r.QueryString)
+func Handle(w http.ResponseWriter, r *http.Request) {
+	query, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return
 	}
@@ -39,15 +38,11 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 		pages := collectPages(url)
 		err = processPages(gatewayPrefix, pages)
 		if err != nil {
+			framework.HandleFailure(w, err)
 			return
 		}
 	}
-
-	response = handler.Response{
-		Body:       []byte(`{ "message": "saga completed"}`),
-		StatusCode: http.StatusOK,
-		Header:     r.Header,
-	}
+	framework.HandleSuccess(w, "saga completed")
 	return
 }
 

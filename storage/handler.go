@@ -14,13 +14,12 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 var client *minio.Client
 
 // Handle a serverless request
-func Handle(r handler.Request) (response handler.Response, err error) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
 		destenationURL = r.Header.Get("X-Callback-Url")
 		ingestionTime  = time.Now()
@@ -29,13 +28,15 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 		httpResponse   *http.Response
 	)
 
-	err = json.Unmarshal(r.Body, &payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
+		framework.HandleFailure(w, err)
 		return
 	}
 
 	err = insert(payload)
 	if err != nil {
+		framework.HandleFailure(w, err)
 		return
 	}
 
@@ -47,20 +48,18 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 			IngestionTime: ingestionTime,
 		})
 		if err != nil {
+			framework.HandleFailure(w, err)
 			return
 		}
 		httpResponse, err = http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 		if err != nil {
+			framework.HandleFailure(w, err)
 			return
 		}
 		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
 	}
 
-	response = handler.Response{
-		Body:       []byte(`{ "message": "saved to storage"}`),
-		StatusCode: http.StatusOK,
-		Header:     r.Header,
-	}
+	framework.HandleSuccess(w, "saved to storage")
 	return
 }
 
