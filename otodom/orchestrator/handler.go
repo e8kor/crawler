@@ -14,30 +14,13 @@ import (
 	"sync"
 	"time"
 
+	otodom "github.com/e8kor/crawler/otodom/commons"
+
 	"github.com/gocolly/colly/v2"
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
-// Page stores Otodom dashboard structure
-type Page struct {
-	URL  string
-	Page int
-}
-
-// PageSorter is API for Page collection
-type PageSorter []Page
-
-func (a PageSorter) Len() int           { return len(a) }
-func (a PageSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a PageSorter) Less(i, j int) bool { return a[i].Page < a[j].Page }
-
-// Entry is domain associated crawled json
-type Entry struct {
-	Created time.Time         `json:"created"`
-	Domain  string            `json:"domain"`
-	Data    []json.RawMessage `json:"data"`
-}
-
+//Handle is main function entrypoint
 func Handle(r handler.Request) (response handler.Response, err error) {
 	query, err := url.ParseQuery(r.QueryString)
 	if err != nil {
@@ -68,9 +51,9 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	return
 }
 
-func collectPages(url string) (pages []Page) {
+func collectPages(url string) (pages []otodom.Page) {
 	var (
-		lastPage Page
+		lastPage otodom.Page
 		c        = colly.NewCollector()
 	)
 
@@ -79,7 +62,7 @@ func collectPages(url string) (pages []Page) {
 		if err != nil {
 			log.Println("error parsing page", err)
 		} else {
-			page := Page{
+			page := otodom.Page{
 				Page: i,
 				URL:  e.Attr("href"),
 			}
@@ -104,7 +87,7 @@ func collectPages(url string) (pages []Page) {
 		} else {
 			pageURL = fmt.Sprintf("%s?page=%d", url, i)
 		}
-		pages = append(pages, Page{
+		pages = append(pages, otodom.Page{
 			Page: i,
 			URL:  pageURL,
 		})
@@ -115,7 +98,7 @@ func collectPages(url string) (pages []Page) {
 	return
 }
 
-func processPages(gatewayPrefix string, pages []Page) (err error) {
+func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 	var (
 		responses    []json.RawMessage
 		wg           sync.WaitGroup
@@ -169,7 +152,7 @@ func processPages(gatewayPrefix string, pages []Page) (err error) {
 	return
 }
 
-func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page Page) {
+func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Page) {
 
 	var data []json.RawMessage
 

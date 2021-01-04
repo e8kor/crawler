@@ -40,7 +40,8 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	)
 
 	if urls == nil {
-		log.Fatalln("missing url parameter")
+		log.Println("missing url parameter")
+		return
 	}
 	for _, url := range urls {
 		entries = append(entries, collectEntries(url)...)
