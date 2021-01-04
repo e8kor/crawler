@@ -152,7 +152,7 @@ func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Pag
 	var data []json.RawMessage
 
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
-	response, err := http.Get(fmt.Sprintf("%s/otodom-scrapper?url=%s", gatewayPrefix, page.URL))
+	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler?url=%s", gatewayPrefix, page.URL))
 	if err != nil {
 		log.Println("failed to get response from scrapper", err)
 		ch <- data
