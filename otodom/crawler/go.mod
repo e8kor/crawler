@@ -9,6 +9,5 @@ require (
 )
 
 replace (
-	github.com/e8kor/crawler/commons => ../commons
 	github.com/e8kor/crawler/otodom/commons => ../commons
 )
