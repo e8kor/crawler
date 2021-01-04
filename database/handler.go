@@ -13,22 +13,20 @@ import (
 	framework "github.com/e8kor/crawler/commons"
 	//Database import for function
 	_ "github.com/lib/pq"
-
-	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
 // Handle a serverless request
-func Handle(r handler.Request) (handler.Response, error) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
 		destenationURL = r.Header.Get("X-Callback-Url")
 		ingestionTime  = time.Now()
-		response       handler.Response
 		entry          framework.Entry
 	)
 
-	err := json.Unmarshal(r.Body, &entry)
+	err := json.NewDecoder(r.Body).Decode(&entry)
 	if err != nil {
-		return response, err
+		framework.HandleFailure(w, err)
+		return
 	}
 
 	err = insert(entry, prepareConnectionString())
@@ -38,21 +36,19 @@ func Handle(r handler.Request) (handler.Response, error) {
 		result := entry.PrepareResult(ingestionTime, err)
 		raw, err := json.Marshal(result)
 		if err != nil {
-			return response, err
+			framework.HandleFailure(w, err)
+			return
 		}
 		destenationResponse, err := http.Post(destenationURL, "application/json", bytes.NewBuffer(raw))
 		if err != nil {
-			return response, err
+			framework.HandleFailure(w, err)
+			return
 		}
 		log.Printf("received x-callback-url %s response: %v\n", destenationURL, destenationResponse)
 	}
 
-	response = handler.Response{
-		Body:       []byte(`{ "message": "saved to database"}`),
-		StatusCode: http.StatusOK,
-		Header:     r.Header,
-	}
-	return response, err
+	framework.HandleSuccess(w, "saved to database")
+	return
 }
 
 func insert(entry framework.Entry, connection string) (err error) {
