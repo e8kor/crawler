@@ -3,3 +3,4 @@ main
 template
 build
 workspace.code-workspace
+vendor
