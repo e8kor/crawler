@@ -5,56 +5,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
+	framework "github.com/e8kor/crawler/commons"
 	//Database import for function
 	_ "github.com/lib/pq"
 
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
-
-// Entry is domain associated crawled json
-type Entry struct {
-	Created time.Time         `json:"created"`
-	Domain  string            `json:"domain"`
-	Data    []json.RawMessage `json:"data"`
-}
-
-func (entry *Entry) prepareInsertStatement() (statement string, err error) {
-	var (
-		inserts []string
-		time    = entry.Created.Format(time.RFC3339)
-		bytes   []byte
-	)
-	for _, entry := range entry.Data {
-		bytes, err = entry.MarshalJSON()
-		if err != nil {
-			return
-		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, bytes))
-	}
-	if inserts == nil {
-		log.Println("no records to insert")
-		return
-	}
-	insertStatement := strings.Join(inserts[:], ", ")
-	statement = fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
-	return
-}
-
-// Result is result of data storing
-type Result struct {
-	Status        bool      `json:"status"`
-	Domain        string    `json:"domain"`
-	IngestionTime time.Time `json:"ingestion_time"`
-	Message       string    `json:"message"`
-}
 
 // Handle a serverless request
 func Handle(r handler.Request) (handler.Response, error) {
@@ -62,34 +23,19 @@ func Handle(r handler.Request) (handler.Response, error) {
 		destenationURL = r.Header.Get("X-Callback-Url")
 		ingestionTime  = time.Now()
 		response       handler.Response
-		result         Result
-		payload        Entry
+		entry          framework.Entry
 	)
 
-	err := json.Unmarshal(r.Body, &payload)
+	err := json.Unmarshal(r.Body, &entry)
 	if err != nil {
 		return response, err
 	}
 
-	err = insert(payload)
+	err = insert(entry, prepareConnectionString())
 
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
-		if err != nil {
-			message := fmt.Sprintf("error: %s", err)
-			result = Result{
-				Status:        false,
-				Domain:        payload.Domain,
-				IngestionTime: ingestionTime,
-				Message:       message,
-			}
-		} else {
-			result = Result{
-				Status:        true,
-				Domain:        payload.Domain,
-				IngestionTime: ingestionTime,
-			}
-		}
+		result := entry.PrepareResult(ingestionTime, err)
 		raw, err := json.Marshal(result)
 		if err != nil {
 			return response, err
@@ -109,20 +55,13 @@ func Handle(r handler.Request) (handler.Response, error) {
 	return response, err
 }
 
-func insert(entry Entry) (err error) {
-	var (
-		host     = os.Getenv("PG_HOST")
-		port     = os.Getenv("PG_PORT")
-		user     = getAPISecret("database-username")
-		password = getAPISecret("database-password")
-		dbname   = getAPISecret("database-name")
-	)
-	statement, err := entry.prepareInsertStatement()
+func insert(entry framework.Entry, connection string) (err error) {
+
+	statement, err := entry.PrepareInsertStatement()
 	if err != nil {
 		return
 	}
-	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", connectionString)
+	db, err := sql.Open("postgres", connection)
 	if err != nil {
 		return
 	}
@@ -132,17 +71,14 @@ func insert(entry Entry) (err error) {
 	return
 }
 
-func streamToByte(stream io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Bytes()
-}
-
-func getAPISecret(secretName string) (secret string) {
-	secretBytes, err := ioutil.ReadFile("/var/openfaas/secrets/" + secretName)
-	if err != nil {
-		panic(err)
-	}
-	secret = string(secretBytes)
-	return secret
+func prepareConnectionString() (connection string) {
+	var (
+		host     = os.Getenv("PG_HOST")
+		port     = os.Getenv("PG_PORT")
+		user     = framework.GetAPISecret("database-username")
+		password = framework.GetAPISecret("database-password")
+		dbname   = framework.GetAPISecret("database-name")
+	)
+	connection = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	return
 }

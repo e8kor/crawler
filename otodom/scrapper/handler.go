@@ -3,30 +3,20 @@ package function
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/gocolly/colly/v2"
 
+	otodom "github.com/e8kor/crawler/otodom/commons"
+
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
 
-// Entry stores Otodom dashboard structure
-type Entry struct {
-	Title      string `json:"title"`
-	Name       string `json:"name"`
-	Region     string `json:"region"`
-	Price      string `json:"price"`
-	TotalPrice string `json:"total_price"`
-	Area       string `json:"area"`
-	Link       string `json:"link"`
-}
-
 func Handle(r handler.Request) (response handler.Response, err error) {
 	var (
-		entries      []Entry
+		entries      []otodom.Entry
 		httpResponse *http.Response
 	)
 	query, err := url.ParseQuery(r.QueryString)
@@ -71,12 +61,12 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	return
 }
 
-func collectEntries(url string) (entries []Entry) {
+func collectEntries(url string) (entries []otodom.Entry) {
 
 	c := colly.NewCollector()
 
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
-		entry := Entry{
+		entry := otodom.Entry{
 			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
 			Name:       e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
 			Region:     e.ChildText("div.offer-item-details > header > p"),
@@ -96,10 +86,4 @@ func collectEntries(url string) (entries []Entry) {
 
 	log.Printf("collected %d records for url %s\n", len(entries), url)
 	return entries
-}
-
-func streamToByte(stream io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Bytes()
 }

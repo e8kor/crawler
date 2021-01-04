@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	framework "github.com/e8kor/crawler/commons"
 	otodom "github.com/e8kor/crawler/otodom/commons"
 
 	"github.com/gocolly/colly/v2"
@@ -124,7 +124,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 
 	log.Printf("collected %d datasets\n", len(responses))
 
-	raw, err = json.Marshal(Entry{
+	raw, err = json.Marshal(framework.Entry{
 		Created: time.Now(),
 		Domain:  "otodom",
 		Data:    responses,
@@ -164,7 +164,7 @@ func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Pag
 		return
 	}
 
-	err = json.Unmarshal(streamToByte(response.Body), &data)
+	err = json.Unmarshal(framework.StreamToByte(response.Body), &data)
 	if err != nil {
 		log.Println("failed to read response from scrapper", err)
 		ch <- data
@@ -175,10 +175,4 @@ func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Pag
 
 	ch <- data
 	return
-}
-
-func streamToByte(stream io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Bytes()
 }

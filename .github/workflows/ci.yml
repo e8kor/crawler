@@ -36,10 +36,19 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build multi platform
+      - name: Build multi platform core functions
         run: |
           faas-cli publish --platforms linux/arm,linux/arm64
-      - name: deploy
+      - name: deploy core functions
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
+      - name: Build multi platform otodom functions
+        working-directory: ./otodom
+        run: |
+          faas-cli publish --platforms linux/arm,linux/arm64
+      - name: deploy otodom functions
+        working-directory: ./otodom
         if: success() && github.ref == 'refs/heads/main'
         run: |
           faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}

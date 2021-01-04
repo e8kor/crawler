@@ -3,35 +3,19 @@ package function
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	framework "github.com/e8kor/crawler/commons"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	handler "github.com/openfaas/templates-sdk/go-http"
 )
-
-// Entry is domain associated crawled json
-type Entry struct {
-	Created time.Time         `json:"created"`
-	Domain  string            `json:"domain"`
-	Data    []json.RawMessage `json:"data"`
-}
-
-// Result is result of data storing
-type Result struct {
-	Status        bool      `json:"status"`
-	Domain        string    `json:"domain"`
-	IngestionTime time.Time `json:"ingestion_time"`
-	Message       string    `json:"message"`
-}
 
 var client *minio.Client
 
@@ -41,7 +25,7 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 		destenationURL = r.Header.Get("X-Callback-Url")
 		ingestionTime  = time.Now()
 		raw            []byte
-		payload        Entry
+		payload        framework.Entry
 		httpResponse   *http.Response
 	)
 
@@ -57,7 +41,7 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
-		raw, err = json.Marshal(Result{
+		raw, err = json.Marshal(framework.Result{
 			Status:        true,
 			Domain:        payload.Domain,
 			IngestionTime: ingestionTime,
@@ -80,7 +64,7 @@ func Handle(r handler.Request) (response handler.Response, err error) {
 	return
 }
 
-func insert(entry Entry) (err error) {
+func insert(entry framework.Entry) (err error) {
 	var (
 		ctx      = context.Background()
 		location = "us-east-1"
@@ -112,7 +96,7 @@ func insert(entry Entry) (err error) {
 		log.Println("failed marshalling data", err)
 		return
 	}
-	filename, err := randomFilename()
+	filename, err := framework.RandomFilename()
 	if err != nil {
 		log.Println("failed generating filename", err)
 		return
@@ -142,8 +126,8 @@ func insert(entry Entry) (err error) {
 func createClient() (client *minio.Client, err error) {
 	var (
 		endpoint        = os.Getenv("MINIO_HOST")
-		accessKeyID     = getAPISecret("storage-access-key")
-		secretAccessKey = getAPISecret("storage-secret-key")
+		accessKeyID     = framework.GetAPISecret("storage-access-key")
+		secretAccessKey = framework.GetAPISecret("storage-secret-key")
 		useSSL          = false
 	)
 	return minio.New(
@@ -153,29 +137,4 @@ func createClient() (client *minio.Client, err error) {
 			Secure: useSSL,
 		},
 	)
-}
-
-func randomFilename() (s string, err error) {
-	b := make([]byte, 8)
-	_, err = rand.Read(b)
-	if err != nil {
-		return
-	}
-	s = fmt.Sprintf("%x", b)
-	return
-}
-
-func streamToByte(stream io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Bytes()
-}
-
-func getAPISecret(secretName string) (secret string) {
-	secretBytes, err := ioutil.ReadFile("/var/openfaas/secrets/" + secretName)
-	if err != nil {
-		panic(err)
-	}
-	secret = string(secretBytes)
-	return
 }
