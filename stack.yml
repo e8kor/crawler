@@ -14,7 +14,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      PG_HOST: "192.168.0.211"
+      PG_HOST: "external-database"
       PG_PORT: "5432"
       exec_timeout: "1m"
     secrets:
@@ -35,7 +35,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      MINIO_HOST: "192.168.0.214:9000"
+      MINIO_HOST: "external-storage:9000"
       exec_timeout: "1m"
     secrets:
       - storage-access-key
