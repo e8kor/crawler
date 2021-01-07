@@ -14,15 +14,16 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      PG_HOST: "external-database"
+      PG_HOST: "database.default"
       PG_PORT: "5432"
-      exec_timeout: "1m"
+      exec_timeout: "3m"
     secrets:
       - database-name
       - database-username
       - database-password
     labels:
       com.openfaas.scale.min: 1
+      app: "function"
   storage:
     lang: golang-middleware
     handler: ./storage
@@ -35,13 +36,14 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      MINIO_HOST: "external-storage:9000"
-      exec_timeout: "1m"
+      MINIO_HOST: "storage.default:9000"
+      exec_timeout: "3m"
     secrets:
       - storage-access-key
       - storage-secret-key
     labels:
       com.openfaas.scale.min: 1
+      app: "function"
   otodom-orchestrator:
     lang: golang-middleware
     handler: ./otodom/orchestrator
@@ -60,10 +62,13 @@ functions:
     environment:
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
-      write_timeout: 3m
-      read_timeout: 3m
-      exec_timeout: 3m
+      write_timeout: 5m
+      read_timeout: 5m
+      exec_timeout: 5m
       handler_wait_duration: 1m
+    labels:
+      com.openfaas.scale.min: 1
+      app: "function"
   otodom-crawler:
     lang: golang-middleware
     handler: ./otodom/crawler
@@ -77,9 +82,10 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      exec_timeout: "1m"
+      exec_timeout: 2m
     labels:
       com.openfaas.scale.min: 6
+      app: "function"
 configuration:
   templates:
     - name: golang-middleware
