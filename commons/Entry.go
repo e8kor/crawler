@@ -10,9 +10,11 @@ import (
 
 // Entry is domain associated crawled json
 type Entry struct {
-	Created time.Time         `json:"created"`
-	Domain  string            `json:"domain"`
-	Data    []json.RawMessage `json:"data"`
+	Created       time.Time         `json:"created"`
+	Domain        string            `json:"domain"`
+	SchemaName    string            `json:"schema_name"`
+	SchemaVersion string            `json:"schema_version"`
+	Data          []json.RawMessage `json:"data"`
 }
 
 //PrepareInsertStatement generates sql insert query
@@ -22,19 +24,19 @@ func (entry *Entry) PrepareInsertStatement() (statement string, err error) {
 		time    = entry.Created.Format(time.RFC3339)
 		bytes   []byte
 	)
-	for _, entry := range entry.Data {
-		bytes, err = entry.MarshalJSON()
+	for _, data := range entry.Data {
+		bytes, err = data.MarshalJSON()
 		if err != nil {
 			return
 		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s')", time, bytes))
+		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s', '%s', '%s')", time, entry.SchemaName, entry.SchemaVersion, bytes))
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
 		return
 	}
 	insertStatement := strings.Join(inserts[:], ", ")
-	statement = fmt.Sprintf("INSERT INTO %s(created, data) VALUES %s;", entry.Domain, insertStatement)
+	statement = fmt.Sprintf("INSERT INTO %s(created, schema_name, schema_version, data) VALUES %s;", entry.Domain, insertStatement)
 	return
 }
 

@@ -95,12 +95,14 @@ func collectPages(url string) (pages []otodom.Page) {
 
 func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 	var (
-		responses    []json.RawMessage
 		wg           sync.WaitGroup
 		raw          []byte
 		httpResponse *http.Response
+		schemas      map[otodom.SchemaKey]otodom.Schema
+		entries      map[otodom.SchemaKey][]otodom.Entry
+		created      = time.Now()
 	)
-	ch := make(chan []json.RawMessage, 40)
+	ch := make(chan otodom.CrawlingResponse, 40)
 	wg.Add(len(pages))
 	log.Printf("scheduling %d tasks", len(pages))
 	for _, page := range pages {
@@ -108,48 +110,79 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 	}
 
 	go func() {
-		for json := range ch {
-			responses = append(responses, json...)
-			log.Printf("added %d datasets, total count is %d \n", len(json), len(responses))
+		for entry := range ch {
+			key := otodom.SchemaKey{entry.SchemaName, entry.SchemaVersion}
+			values, found := entries[key]
+			if found {
+				values = append(values, entry.Entries...)
+			} else {
+				values = entry.Entries
+			}
+			entries[key] = values
+			schemas[key] = entry.Schema
+			log.Printf("added %d for %s datasets, total count is %d \n", len(entry.Entries), key, len(values))
 			wg.Done()
 		}
 	}()
 	wg.Wait()
 	close(ch)
+	for key, value := range entries {
 
-	log.Printf("collected %d datasets\n", len(responses))
+		raw, err = preparePayload(created, key, value)
 
-	raw, err = json.Marshal(framework.Entry{
-		Created: time.Now(),
-		Domain:  "otodom",
-		Data:    responses,
-	})
+		log.Println("sending database persist request")
+		httpResponse, err = http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+		if err != nil {
+			log.Println("error when seding database persist request", err)
+			return
+		}
+		log.Printf("received database response persist payload: %v\n", httpResponse)
+		return
+	}
+
+	for key, value := range schemas {
+
+		raw, err = preparePayload(created, key, value)
+		if err != nil {
+			log.Println("error when seding storage persist request", err)
+			return
+		}
+		log.Println("sending storage persist request")
+		httpResponse, err = http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+		if err != nil {
+			log.Println("error when seding storage persist request", err)
+			return
+		}
+		log.Printf("received storage response persist payload: %v\n", httpResponse)
+		return
+	}
+	return
+}
+
+func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{}) (bytes []byte, err error) {
+	raw, err := json.Marshal(schema)
+	if err != nil {
+		return
+	}
+
+	payload := framework.Entry{
+		Created:       created,
+		Domain:        "otodom",
+		SchemaName:    key.SchemaName,
+		SchemaVersion: key.SchemaVersion,
+		Data:          []json.RawMessage{json.RawMessage(raw)},
+	}
+	bytes, err = json.Marshal(payload)
 	if err != nil {
 		log.Println("error while marshalling Entry", err)
 		return
 	}
-
-	log.Println("sending database persist request")
-	httpResponse, err = http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		log.Println("error when seding database persist request", err)
-		return
-	}
-	log.Printf("received database response persist payload: %v\n", httpResponse)
-
-	log.Println("sending storage persist request")
-	httpResponse, err = http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
-	if err != nil {
-		log.Println("error when seding storage persist request", err)
-		return
-	}
-	log.Printf("received storage response persist payload: %v\n", httpResponse)
 	return
 }
 
-func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Page) {
+func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otodom.Page) {
 
-	var data []json.RawMessage
+	var data otodom.CrawlingResponse
 
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
 	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler?url=%s", gatewayPrefix, page.URL))
@@ -159,7 +192,7 @@ func getEntries(ch chan []json.RawMessage, gatewayPrefix string, page otodom.Pag
 		return
 	}
 
-	err = json.Unmarshal(framework.StreamToByte(response.Body), &data)
+	err = json.NewDecoder(response.Body).Decode(&data)
 	if err != nil {
 		log.Println("failed to read response from scrapper", err)
 		ch <- data

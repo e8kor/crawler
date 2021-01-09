@@ -100,7 +100,7 @@ func insert(entry framework.Entry) (err error) {
 		log.Println("failed generating filename", err)
 		return
 	}
-	path := fmt.Sprintf("created=%d/%s.json", entry.Created.Unix(), filename)
+	path := fmt.Sprintf("schema_name=%s/schema_version=%s/created=%d/%s.json", entry.SchemaName, entry.SchemaVersion, entry.Created.Unix(), filename)
 	log.Printf("writing json at path %s", path)
 	buff := bytes.NewBuffer(raw)
 

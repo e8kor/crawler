@@ -17,6 +17,7 @@ import (
 func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
 		entries      []otodom.Entry
+		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
 	query, err := url.ParseQuery(r.URL.RawQuery)
@@ -37,10 +38,24 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	for _, url := range urls {
 		entries = append(entries, collectEntries(url)...)
 	}
+	response = otodom.CrawlingResponse{
+		SchemaName:    "otodom.rent",
+		SchemaVersion: "v0.0.1",
+		Schema: otodom.Schema{
+			Title:      otodom.Field{"Title", "Advertisement Post title", "text"},
+			Name:       otodom.Field{"Agency Name", "Agency name or Private Offer", "text"},
+			Region:     otodom.Field{"Estate localtion", "Estate location in Poland", "text"},
+			Price:      otodom.Field{"Price for square meter", "Price in square meter in Polish zloty", "zl/m2"},
+			TotalPrice: otodom.Field{"Total estate price", "Total estate in Polish zloty", "zl"},
+			Area:       otodom.Field{"Available area", "Available area in square meters", "m2"},
+			Link:       otodom.Field{"URL", "Offer URL", "URL"},
+		},
+		Entries: entries,
+	}
 
 	if destenationURL != "" {
 		log.Printf("using callback %s\n", destenationURL)
-		raw, err := json.Marshal(entries)
+		raw, err := json.Marshal(response)
 		if err != nil {
 			framework.HandleFailure(w, err)
 			return
@@ -52,7 +67,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
 	}
 
-	framework.HandleSuccess(w, entries)
+	framework.HandleSuccess(w, response)
 	return
 }
 
