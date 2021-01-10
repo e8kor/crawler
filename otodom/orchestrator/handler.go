@@ -126,7 +126,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 	}()
 	wg.Wait()
 	close(ch)
-	for key, value := range entries {
+	for key, value := range schemas {
 
 		raw, err = preparePayload(created, key, value)
 
@@ -140,7 +140,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 		return
 	}
 
-	for key, value := range schemas {
+	for key, value := range entries {
 
 		raw, err = preparePayload(created, key, value)
 		if err != nil {
