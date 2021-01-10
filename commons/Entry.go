@@ -29,14 +29,14 @@ func (entry *Entry) PrepareInsertStatement() (statement string, err error) {
 		if err != nil {
 			return
 		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s', '%s', '%s')", time, entry.SchemaName, entry.SchemaVersion, bytes))
+		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s', '%s', '%s', '%s')", time, entry.Domain, entry.SchemaName, entry.SchemaVersion, bytes))
 	}
 	if inserts == nil {
 		log.Println("no records to insert")
 		return
 	}
 	insertStatement := strings.Join(inserts[:], ", ")
-	statement = fmt.Sprintf("INSERT INTO %s(created, schema_name, schema_version, data) VALUES %s;", entry.Domain, insertStatement)
+	statement = fmt.Sprintf("INSERT INTO schemas(created, schema_group, schema_name, schema_version, data) VALUES %s ON CONFLICT DO NOTHING;", insertStatement)
 	return
 }
 
