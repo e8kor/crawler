@@ -137,7 +137,6 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 			return
 		}
 		log.Printf("received database response persist payload: %v\n", httpResponse)
-		return
 	}
 
 	for key, value := range entries {
@@ -154,14 +153,15 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 			return
 		}
 		log.Printf("received storage response persist payload: %v\n", httpResponse)
-		return
 	}
 	return
 }
 
 func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{}) (bytes []byte, err error) {
-	raw, err := json.Marshal(schema)
+	bytes, err = json.Marshal(schema)
 	if err != nil {
+
+		log.Println("error while marshalling Data", err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{})
 		Domain:        "otodom",
 		SchemaName:    key.SchemaName,
 		SchemaVersion: key.SchemaVersion,
-		Data:          []json.RawMessage{json.RawMessage(raw)},
+		Data:          []json.RawMessage{json.RawMessage(bytes)},
 	}
 	bytes, err = json.Marshal(payload)
 	if err != nil {
