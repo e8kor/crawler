@@ -61,4 +61,3 @@ jobs:
         if: success() && github.ref == 'refs/heads/main'
         run: |
           faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
-     
