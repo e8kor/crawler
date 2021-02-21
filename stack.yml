@@ -36,7 +36,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      MINIO_HOST: "storage-minio.storage:9000"
+      MINIO_HOST: "external-storage.storage:9000"
       exec_timeout: "3m"
     secrets:
       - storage-access-key
