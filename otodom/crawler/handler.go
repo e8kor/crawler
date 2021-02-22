@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 
 	"github.com/gocolly/colly/v2"
 
@@ -20,8 +19,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
-
-	params.ParseQuery()
+	
 	var (
 		item           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
