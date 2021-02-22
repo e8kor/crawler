@@ -59,7 +59,7 @@ func collectPages(url string) (pages []otodom.Page) {
 		} else {
 			page := otodom.Page{
 				Page: i,
-				URL:  neturl.PathEscape(e.Attr("href")),
+				URL:  e.Attr("href"),
 			}
 			if lastPage.Page < page.Page {
 				lastPage = page
@@ -84,7 +84,7 @@ func collectPages(url string) (pages []otodom.Page) {
 		}
 		pages = append(pages, otodom.Page{
 			Page: i,
-			URL:  neturl.PathEscape(pageURL),
+			URL:  pageURL,
 		})
 	}
 
@@ -185,7 +185,9 @@ func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otod
 	var data otodom.CrawlingResponse
 
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
-	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler?url=%s", gatewayPrefix, page.URL))
+	params := neturl.Values{}
+	params.Add("url", page.URL)
+	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler?%s", gatewayPrefix, params.Encode()))
 	if err != nil {
 		log.Println("failed to get response from scrapper", err)
 		ch <- data

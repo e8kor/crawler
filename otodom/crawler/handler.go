@@ -20,14 +20,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
-	query, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		framework.HandleFailure(w, err)
-		return
-	}
-
+	
+	params.ParseQuery()
 	var (
-		urls           = query["url"]
+		urls           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
 
