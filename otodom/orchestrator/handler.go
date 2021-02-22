@@ -59,7 +59,8 @@ func collectPages(url string) (pages []otodom.Page) {
 		} else {
 			page := otodom.Page{
 				Page: i,
-				URL:  e.Attr("href"),
+				URL:  
+				url = url.PathEscape(e.Attr("href")),
 			}
 			if lastPage.Page < page.Page {
 				lastPage = page
