@@ -35,9 +35,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		log.Println("missing url parameter")
 		return
 	}
-	for _, url := range urls {
-		url = url.PathUnescape(url)
-		entries = append(entries, collectEntries(url)...)
+	for _, item := range urls {
+		item = url.PathUnescape(item)
+		entries = append(entries, collectEntries(item)...)
 	}
 	response = otodom.CrawlingResponse{
 		SchemaName:    "otodom.rent",
