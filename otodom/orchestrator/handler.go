@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	neturl "net/url"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -21,13 +21,8 @@ import (
 
 //Handle is main function entrypoint
 func Handle(w http.ResponseWriter, r *http.Request) {
-	query, err := neturl.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		return
-	}
-
 	var (
-		urls          = query["url"]
+		urls          = r.URL.Query().Get("url")
 		gatewayPrefix = os.Getenv("GATEWAY_URL")
 	)
 
@@ -68,19 +63,19 @@ func collectPages(url string) (pages []otodom.Page) {
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		log.Println("searching for last page on ", r.URL.String())
+		log.Println("searching for last page on", r.URL.String())
 	})
 
 	c.Visit(url)
 
-	log.Printf("found last page %v\n", lastPage)
+	log.Println("found last page", lastPage)
 
 	for i := 1; i < lastPage.Page; i++ {
 		var pageURL string
 		if strings.Contains(url, "?") {
-			pageURL = fmt.Sprintf("%s&page=%d", url, i)
+			pageURL = url + "&page=" + i
 		} else {
-			pageURL = fmt.Sprintf("%s?page=%d", url, i)
+			pageURL = url + "?page=" + i
 		}
 		pages = append(pages, otodom.Page{
 			Page: i,
@@ -88,7 +83,7 @@ func collectPages(url string) (pages []otodom.Page) {
 		})
 	}
 
-	log.Printf("found %d pages\n", len(pages))
+	log.Println("found", len(pages), "pages")
 
 	return
 }
@@ -104,7 +99,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 	)
 	ch := make(chan otodom.CrawlingResponse, 40)
 	wg.Add(len(pages))
-	log.Printf("scheduling %d tasks", len(pages))
+	log.Println("scheduling", len(pages), "tasks")
 	for _, page := range pages {
 		go getEntries(ch, gatewayPrefix, page)
 	}
@@ -136,7 +131,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 			log.Println("error when seding database persist request", err)
 			return
 		}
-		log.Printf("received database response persist payload: %v\n", httpResponse)
+		log.Println("received database response persist payload:", httpResponse)
 	}
 
 	for key, value := range entries {
@@ -152,7 +147,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 			log.Println("error when seding storage persist request", err)
 			return
 		}
-		log.Printf("received storage response persist payload: %v\n", httpResponse)
+		log.Println("received storage response persist payload:", httpResponse)
 	}
 	return
 }
@@ -185,7 +180,7 @@ func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otod
 	var data otodom.CrawlingResponse
 
 	log.Println("sending otodom crawler request for", page.URL)
-	params := neturl.Values{}
+	params := url.Values{}
 	params.Add("url", page.URL)
 	targetURL := gatewayPrefix + "/otodom-crawler" + "?" + params.Encode()
 	response, err := http.Get(targetURL)
