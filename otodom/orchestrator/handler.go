@@ -22,16 +22,19 @@ import (
 //Handle is main function entrypoint
 func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
-		urls          = r.URL.Query().Get("url")
+		urls          []string
+		paramURL      = r.URL.Query().Get("url")
 		gatewayPrefix = os.Getenv("GATEWAY_URL")
 	)
 
-	if urls == nil {
+	if urls != nil {
+		urls = append(urls, paramURL)
+	} else {
 		urls = append(urls, os.Getenv("SOURCE_URL"))
 	}
 	for _, url := range urls {
 		pages := collectPages(url)
-		err = processPages(gatewayPrefix, pages)
+		err := processPages(gatewayPrefix, pages)
 		if err != nil {
 			framework.HandleFailure(w, err)
 			return
@@ -73,9 +76,9 @@ func collectPages(url string) (pages []otodom.Page) {
 	for i := 1; i < lastPage.Page; i++ {
 		var pageURL string
 		if strings.Contains(url, "?") {
-			pageURL = url + "&page=" + i
+			pageURL = url + "&page=" + strconv.Itoa(i)
 		} else {
-			pageURL = url + "?page=" + i
+			pageURL = url + "?page=" + strconv.Itoa(i)
 		}
 		pages = append(pages, otodom.Page{
 			Page: i,
