@@ -84,7 +84,7 @@ func collectPages(url string) (pages []otodom.Page) {
 		}
 		pages = append(pages, otodom.Page{
 			Page: i,
-			URL:  pageURL,
+			URL:  neturl.PathEscape(pageURL),
 		})
 	}
 
