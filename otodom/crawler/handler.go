@@ -19,7 +19,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
-	
+
 	var (
 		item           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
