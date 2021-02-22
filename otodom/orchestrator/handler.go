@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -21,7 +21,7 @@ import (
 
 //Handle is main function entrypoint
 func Handle(w http.ResponseWriter, r *http.Request) {
-	query, err := url.ParseQuery(r.URL.RawQuery)
+	query, err := neturl.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func collectPages(url string) (pages []otodom.Page) {
 		} else {
 			page := otodom.Page{
 				Page: i,
-				URL:  url.PathEscape(e.Attr("href")),
+				URL:  neturl.PathEscape(e.Attr("href")),
 			}
 			if lastPage.Page < page.Page {
 				lastPage = page
