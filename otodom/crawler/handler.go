@@ -36,7 +36,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, item := range urls {
-		item, error = url.PathUnescape(item)
+		item, err = url.PathUnescape(item)
 		if err != nil {
 			framework.HandleFailure(w, err)
 			return
