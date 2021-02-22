@@ -37,7 +37,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entries = append(entries, collectEntries(item)...)
-	
+
 	response = otodom.CrawlingResponse{
 		SchemaName:    "otodom.rent",
 		SchemaVersion: "v0.0.1",
