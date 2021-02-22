@@ -187,7 +187,7 @@ func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otod
 	log.Printf("sending otodom crawler request for %s\n", page.URL)
 	params := neturl.Values{}
 	params.Add("url", page.URL)
-	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler?%s", gatewayPrefix, params.Encode()))
+	response, err := http.Get(fmt.Sprintf("%s/otodom-crawler", gatewayPrefix), params)
 	if err != nil {
 		log.Println("failed to get response from scrapper", err)
 		ch <- data
@@ -201,7 +201,7 @@ func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otod
 		return
 	}
 
-	log.Printf("received response from crawler for %s\n", page.URL)
+	log.Println("received response from crawler for", page.URL)
 
 	ch <- data
 	return

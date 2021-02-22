@@ -43,7 +43,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if destenationURL != "" {
-		log.Printf("using callback %s\n", destenationURL)
+		log.Println("using callback:", destenationURL)
 		raw, err := json.Marshal(response)
 		if err != nil {
 			framework.HandleFailure(w, err)
@@ -53,7 +53,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		log.Printf("received x-callback-url %s response: %v\n", destenationURL, httpResponse)
+		log.Println("received x-callback-url", destenationURL, "response:", httpResponse)
 	}
 
 	framework.HandleSuccess(w, response)
@@ -83,6 +83,6 @@ func collectEntries(url string) (entries []otodom.Entry) {
 
 	c.Visit(url)
 
-	log.Printf("collected %d records for url %s\n", len(entries), url)
+	log.Println("collected", len(entries), "records for url:", url)
 	return entries
 }
