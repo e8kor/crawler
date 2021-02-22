@@ -31,11 +31,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		log.Println("missing url parameter")
 		return
 	}
-	item, err = url.PathUnescape(item)
-	if err != nil {
-		framework.HandleFailure(w, err)
-		return
-	}
 	entries = append(entries, collectEntries(item)...)
 
 	response = otodom.CrawlingResponse{
