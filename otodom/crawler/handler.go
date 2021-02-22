@@ -23,22 +23,21 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	params.ParseQuery()
 	var (
-		urls           = r.URL.Query().Get("url")
+		item           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
 
-	if urls == nil {
+	if item == nil {
 		log.Println("missing url parameter")
 		return
 	}
-	for _, item := range urls {
-		item, err = url.PathUnescape(item)
-		if err != nil {
-			framework.HandleFailure(w, err)
-			return
-		}
-		entries = append(entries, collectEntries(item)...)
+	item, err = url.PathUnescape(item)
+	if err != nil {
+		framework.HandleFailure(w, err)
+		return
 	}
+	entries = append(entries, collectEntries(item)...)
+	
 	response = otodom.CrawlingResponse{
 		SchemaName:    "otodom.rent",
 		SchemaVersion: "v0.0.1",
