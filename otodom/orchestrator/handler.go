@@ -184,7 +184,7 @@ func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otod
 
 	var data otodom.CrawlingResponse
 
-	log.Printf("sending otodom crawler request for %s\n", page.URL)
+	log.Println("sending otodom crawler request for", page.URL)
 	params := neturl.Values{}
 	params.Add("url", page.URL)
 	targetURL := gatewayPrefix + "/otodom-crawler" + "?" + params.Encode()
