@@ -20,7 +20,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
-	
+
 	params.ParseQuery()
 	var (
 		urls           = r.URL.Query().Get("url")
