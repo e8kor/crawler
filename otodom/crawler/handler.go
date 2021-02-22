@@ -25,10 +25,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
 
-	if item == nil {
-		log.Println("missing url parameter")
-		return
-	}
 	entries = append(entries, collectEntries(item)...)
 
 	response = otodom.CrawlingResponse{
