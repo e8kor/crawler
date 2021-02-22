@@ -36,7 +36,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, item := range urls {
-		item = url.PathUnescape(item)
+		item, error = url.PathUnescape(item)
+		if err != nil {
+			framework.HandleFailure(w, err)
+			return
+		}
 		entries = append(entries, collectEntries(item)...)
 	}
 	response = otodom.CrawlingResponse{
