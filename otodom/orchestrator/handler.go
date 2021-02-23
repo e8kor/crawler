@@ -109,7 +109,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 
 	go func() {
 		for entry := range ch {
-			if entry.SchemaName == "" || entry.SchemaVersion == ""  {
+			if entry.SchemaName == "" || entry.SchemaVersion == "" {
 				log.Printf("skipping entry %+v\n", entry)
 				wg.Done()
 			} else {
