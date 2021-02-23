@@ -10,11 +10,11 @@ import (
 
 // Entry is domain associated crawled json
 type Entry struct {
-	Created       time.Time         `json:"created"`
-	Domain        string            `json:"domain"`
-	SchemaName    string            `json:"schema_name"`
-	SchemaVersion string            `json:"schema_version"`
-	Data          []json.RawMessage `json:"data"`
+	Created       time.Time       `json:"created"`
+	Domain        string          `json:"domain"`
+	SchemaName    string          `json:"schema_name"`
+	SchemaVersion string          `json:"schema_version"`
+	Data          json.RawMessage `json:"data"`
 }
 
 //PrepareInsertStatement generates sql insert query
@@ -24,13 +24,11 @@ func (entry *Entry) PrepareInsertStatement() (statement string, err error) {
 		time    = entry.Created.Format(time.RFC3339)
 		bytes   []byte
 	)
-	for _, data := range entry.Data {
-		bytes, err = data.MarshalJSON()
-		if err != nil {
-			return
-		}
-		inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s', '%s', '%s', '%s')", time, entry.Domain, entry.SchemaName, entry.SchemaVersion, bytes))
+	bytes, err = entry.Data.MarshalJSON()
+	if err != nil {
+		return
 	}
+	inserts = append(inserts, fmt.Sprintf("('%s'::timestamp, '%s', '%s', '%s', '%s')", time, entry.Domain, entry.SchemaName, entry.SchemaVersion, bytes))
 	if inserts == nil {
 		log.Println("no records to insert")
 		return

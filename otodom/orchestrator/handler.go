@@ -109,7 +109,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 
 	go func() {
 		for entry := range ch {
-			if entry.SchemaName == "" || entry.SchemaVersion == ""  {
+			if entry.SchemaName == "" || entry.SchemaVersion == "" {
 				log.Printf("skipping entry %+v\n", entry)
 				wg.Done()
 			} else {
@@ -163,7 +163,6 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{}) (bytes []byte, err error) {
 	bytes, err = json.Marshal(schema)
 	if err != nil {
-
 		log.Println("error while marshalling Data", err)
 		return
 	}
@@ -173,7 +172,7 @@ func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{})
 		Domain:        "otodom",
 		SchemaName:    key.SchemaName,
 		SchemaVersion: key.SchemaVersion,
-		Data:          []json.RawMessage{json.RawMessage(bytes)},
+		Data:          json.RawMessage(bytes),
 	}
 	bytes, err = json.Marshal(payload)
 	if err != nil {
