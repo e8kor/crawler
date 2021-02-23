@@ -28,7 +28,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	entries = append(entries, collectEntries(item)...)
 
 	response = otodom.CrawlingResponse{
-		SchemaName:    "otodom.rent",
+		SchemaName:    "rent",
 		SchemaVersion: "v0.0.1",
 		Schema: otodom.Schema{
 			Title:      otodom.Field{"Title", "Advertisement Post title", "text"},

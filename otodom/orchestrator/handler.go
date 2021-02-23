@@ -109,17 +109,22 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 
 	go func() {
 		for entry := range ch {
-			key := otodom.SchemaKey{entry.SchemaName, entry.SchemaVersion}
-			values, found := entries[key]
-			if found {
-				values = append(values, entry.Entries...)
+			if entry.SchemaName == "" || entry.SchemaVersion == ""  {
+				log.Printf("skipping entry %+v\n", entry)
+				wg.Done()
 			} else {
-				values = entry.Entries
+				key := otodom.SchemaKey{entry.SchemaName, entry.SchemaVersion}
+				values, found := entries[key]
+				if found {
+					values = append(values, entry.Entries...)
+				} else {
+					values = entry.Entries
+				}
+				entries[key] = values
+				schemas[key] = entry.Schema
+				log.Printf("added %d for %s datasets, total count is %d \n", len(entry.Entries), key, len(values))
+				wg.Done()
 			}
-			entries[key] = values
-			schemas[key] = entry.Schema
-			log.Printf("added %d for %s datasets, total count is %d \n", len(entry.Entries), key, len(values))
-			wg.Done()
 		}
 	}()
 	wg.Wait()
