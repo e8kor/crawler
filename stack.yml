@@ -44,7 +44,7 @@ functions:
     labels:
       com.openfaas.scale.min: 1
       app: "function"
-  otodom-orchestrator:
+  otodom-office-rent-orchestrator:
     lang: golang-middleware
     handler: ./otodom/orchestrator
     image: e8kor/crawler:otodom-orchestrator
@@ -60,7 +60,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      CRAWLER_SUFFIX: "/otodom-crawler"
+      CRAWLER_SUFFIX: "/otodom-office-rent-crawler"
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
       write_timeout: 5m
@@ -70,7 +70,7 @@ functions:
     labels:
       com.openfaas.scale.min: 1
       app: "function"
-  otodom-crawler:
+  otodom-office-rent-crawler:
     lang: golang-middleware
     handler: ./otodom/crawler
     image: e8kor/crawler:otodom-crawler
@@ -83,7 +83,7 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      SCHEMA_NAME: "rent"
+      SCHEMA_NAME: "office-rent"
       SCHEMA_VERSION: "v0.0.2"
       exec_timeout: 2m
     labels:
