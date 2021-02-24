@@ -44,14 +44,6 @@ functions:
     labels:
       com.openfaas.scale.min: 1
       app: "function"
-configuration:
-  templates:
-    - name: golang-middleware
----
-version: 1.0
-provider:
-  name: openfaas
-functions:
   otodom-office-rent-orchestrator:
     lang: golang-middleware
     handler: ./otodom/orchestrator
@@ -97,14 +89,6 @@ functions:
     labels:
       com.openfaas.scale.min: 6
       app: "function"
-configuration:
-  templates:
-    - name: golang-middleware
----
-version: 1.0
-provider:
-  name: openfaas
-functions:
   otodom-flat-rent-orchestrator:
     lang: golang-middleware
     handler: ./otodom/orchestrator
@@ -150,3 +134,6 @@ functions:
     labels:
       com.openfaas.scale.min: 6
       app: "function"
+configuration:
+  templates:
+    - name: golang-middleware
