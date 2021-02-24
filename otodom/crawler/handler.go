@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"regexp"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 
@@ -21,15 +24,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	)
 
 	var (
+		schemaName     = os.Getenv("SCHEMA_NAME")
+		schemaVersion  = os.Getenv("SCHEMA_VERSION")
 		item           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
 
-	entries = append(entries, collectEntries(item)...)
+	entries = append(entries, CollectEntries(item)...)
 
 	response = otodom.CrawlingResponse{
-		SchemaName:    "rent",
-		SchemaVersion: "v0.0.1",
+		SchemaName:    schemaName,
+		SchemaVersion: schemaVersion,
 		Schema: otodom.Schema{
 			Title:      otodom.Field{"Title", "Advertisement Post title", "text"},
 			Name:       otodom.Field{"Agency Name", "Agency name or Private Offer", "text"},
@@ -60,7 +65,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func collectEntries(url string) (entries []otodom.Entry) {
+// CollectEntries crawls Otodom dashboard entries from url
+func CollectEntries(url string) (entries []otodom.Entry) {
 
 	c := colly.NewCollector()
 
@@ -69,10 +75,10 @@ func collectEntries(url string) (entries []otodom.Entry) {
 			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
 			Name:       e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
 			Region:     e.ChildText("div.offer-item-details > header > p"),
-			Price:      e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m"),
-			TotalPrice: e.ChildText("div.offer-item-details > ul > li.offer-item-price"),
-			Area:       e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area"),
-			Link:       e.ChildAttr("div.offer-item-details > header > h3 > a", "href"),
+			Price:      ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m")),
+			TotalPrice: ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-price")),
+			Area:       ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area")),
+			Link:       TakeChractersBefore(e.ChildAttr("div.offer-item-details > header > h3 > a", "href"), ".html"),
 		}
 		entries = append(entries, entry)
 	})
@@ -85,4 +91,19 @@ func collectEntries(url string) (entries []otodom.Entry) {
 
 	log.Println("collected", len(entries), "records for url:", url)
 	return entries
+}
+
+//ExtractNumber pattempt to parse number from string
+func ExtractNumber(raw string) (number string) {
+	pattern := regexp.MustCompile(`(\d+)`)
+	items := pattern.FindAllStringSubmatch(raw, -1)
+	for _, item := range items {
+		number = number + item[1]
+	}
+	return number
+}
+
+//TakeChractersBefore take string before character
+func TakeChractersBefore(raw string, predicate string) (result string) {
+	return raw[:strings.Index(raw, predicate)]
 }

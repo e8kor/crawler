@@ -1,0 +1,9 @@
+#!/bin/bash
+
+parent="$HOME/Homespace/golang/src/github.com/e8kor/crawler"
+modules=("$parent/database" "$parent/storage" "$parent/otodom/crawler" "$parent/otodom/orchestrator")
+
+for module in ${modules[@]}; do
+    echo "updating vendor at $module"
+    (cd $module; go mod vendor)
+done

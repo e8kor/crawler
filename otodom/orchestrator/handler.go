@@ -3,7 +3,6 @@ package function
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -75,10 +74,11 @@ func collectPages(url string) (pages []otodom.Page) {
 
 	for i := 1; i < lastPage.Page; i++ {
 		var pageURL string
+		var index = strconv.Itoa(i)
 		if strings.Contains(url, "?") {
-			pageURL = url + "&page=" + strconv.Itoa(i)
+			pageURL = url + "&page=" + index
 		} else {
-			pageURL = url + "?page=" + strconv.Itoa(i)
+			pageURL = url + "?page=" + index
 		}
 		pages = append(pages, otodom.Page{
 			Page: i,
@@ -134,7 +134,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 		raw, err = preparePayload(created, key, value)
 
 		log.Println("sending database persist request")
-		httpResponse, err = http.Post(fmt.Sprintf("%s/database", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+		httpResponse, err = http.Post(gatewayPrefix+"/database", "application/json", bytes.NewBuffer(raw))
 		if err != nil {
 			log.Println("error when seding database persist request", err)
 			return
@@ -150,7 +150,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 			return
 		}
 		log.Println("sending storage persist request")
-		httpResponse, err = http.Post(fmt.Sprintf("%s/storage", gatewayPrefix), "application/json", bytes.NewBuffer(raw))
+		httpResponse, err = http.Post(gatewayPrefix+"/storage", "application/json", bytes.NewBuffer(raw))
 		if err != nil {
 			log.Println("error when seding storage persist request", err)
 			return
@@ -184,12 +184,15 @@ func preparePayload(created time.Time, key otodom.SchemaKey, schema interface{})
 
 func getEntries(ch chan otodom.CrawlingResponse, gatewayPrefix string, page otodom.Page) {
 
-	var data otodom.CrawlingResponse
+	var (
+		data          otodom.CrawlingResponse
+		crawlerSuffix = os.Getenv("CRAWLER_SUFFIX")
+	)
 
 	log.Println("sending otodom crawler request for", page.URL)
 	params := url.Values{}
 	params.Add("url", page.URL)
-	targetURL := gatewayPrefix + "/otodom-crawler" + "?" + params.Encode()
+	targetURL := gatewayPrefix + crawlerSuffix + "?" + params.Encode()
 	response, err := http.Get(targetURL)
 	if err != nil {
 		log.Println("failed to get response from scrapper", err)
