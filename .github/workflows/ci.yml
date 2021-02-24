@@ -47,4 +47,4 @@ jobs:
       - name: deploy core functions
         if: success() && github.ref == 'refs/heads/main'
         run: |
-          faas-cli deploy -g ${{ secrets.OPENFAAS_GATEWAY }}
+          faas-cli deploy -f ./stack.yml -f ./rent_flat.yml -f ./rent_office.yml -g ${{ secrets.OPENFAAS_GATEWAY }}
