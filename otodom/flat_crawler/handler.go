@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/gocolly/colly/v2"
 
@@ -75,10 +73,10 @@ func CollectEntries(url string) (entries []otodom.Entry) {
 			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
 			Name:       e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
 			Region:     e.ChildText("div.offer-item-details > header > p"),
-			Price:      ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m")),
-			TotalPrice: ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-price")),
-			Area:       ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area")),
-			Link:       TakeChractersBefore(e.ChildAttr("div.offer-item-details > header > h3 > a", "href"), ".html"),
+			Price:      otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m")),
+			TotalPrice: otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-price")),
+			Area:       otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area")),
+			Link:       otodom.TakeChractersBefore(e.ChildAttr("div.offer-item-details > header > h3 > a", "href"), ".html"),
 		}
 		entries = append(entries, entry)
 	})
@@ -91,19 +89,4 @@ func CollectEntries(url string) (entries []otodom.Entry) {
 
 	log.Println("collected", len(entries), "records for url:", url)
 	return entries
-}
-
-//ExtractNumber pattempt to parse number from string
-func ExtractNumber(raw string) (number string) {
-	pattern := regexp.MustCompile(`(\d+)`)
-	items := pattern.FindAllStringSubmatch(raw, -1)
-	for _, item := range items {
-		number = number + item[1]
-	}
-	return number
-}
-
-//TakeChractersBefore take string before character
-func TakeChractersBefore(raw string, predicate string) (result string) {
-	return raw[:strings.Index(raw, predicate)]
 }

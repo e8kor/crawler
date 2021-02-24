@@ -1,9 +1,9 @@
 #!/bin/bash
+parent="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+parent="$parent/.."
 
-parent="$HOME/Homespace/golang/src/github.com/e8kor/crawler"
-modules=("$parent/database" "$parent/storage" "$parent/otodom/crawler" "$parent/otodom/orchestrator")
+modules=("$parent/database" "$parent/storage" "$parent/otodom/flat_crawler" "$parent/otodom/office_crawler" "$parent/otodom/orchestrator")
 
 for module in ${modules[@]}; do
-    echo "updating vendor at $module"
     (cd $module; go mod vendor)
 done

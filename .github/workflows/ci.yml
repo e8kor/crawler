@@ -36,27 +36,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Prepare core database vendor dependencies
-        working-directory: ./database
         run: |
-          go mod vendor
-      - name: Prepare core storage vendor dependencies
-        working-directory: ./storage
-        run: |
-          go mod vendor
-      - name: Prepare otodom orchestrator vendor dependencies
-        working-directory: ./otodom/orchestrator
-        run: |
-          go mod vendor
-      - name: Prepare otodom crawler vendor dependencies
-        working-directory: ./otodom/crawler
-        run: |
-          go mod vendor
+          .bin/update_modules
       - name: Get core templates
         run: |
           faas-cli template pull stack
       - name: Build multi platform core functions
         run: |
-          faas-cli publish --platforms linux/arm,linux/arm64
+          faas-cli publish  -f ./base.yml -f ./rent_flat.yml -f ./rent_office.yml  --platforms linux/arm,linux/arm64
       - name: deploy core functions
         if: success() && github.ref == 'refs/heads/main'
         run: |

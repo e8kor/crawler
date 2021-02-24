@@ -1,4 +1,4 @@
-package function
+package commons
 
 import (
 	"fmt"
@@ -6,16 +6,6 @@ import (
 	"strings"
 	"testing"
 )
-
-func TestHandleReturnsCorrectResponse(t *testing.T) {
-	entries := CollectEntries("https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38")
-
-	if len(entries) == 0 {
-		t.Fatal("Expected entries to be non empty")
-	} else {
-		fmt.Println("response:", entries)
-	}
-}
 
 func TestHandleExtractNumber(t *testing.T) {
 	raw := []string{
