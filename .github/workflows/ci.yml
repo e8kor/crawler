@@ -21,7 +21,7 @@ jobs:
           curl -sSL https://cli.openfaas.com | sudo sh
       - name: Login to OpenFaaS
         run: |
-          echo ${{ secrets.OPENFAAS_PASSWORD }} | faas-cli login -f ./base.yml -f ./rent_flat.yml -f ./rent_office.yml --gateway ${{ secrets.OPENFAAS_GATEWAY }} -u ${{ secrets.OPENFAAS_USERNAME }} --password-stdin
+          echo ${{ secrets.OPENFAAS_PASSWORD }} | faas-cli login -f ./stack.yml -f ./rent_flat.yml -f ./rent_office.yml --gateway ${{ secrets.OPENFAAS_GATEWAY }} -u ${{ secrets.OPENFAAS_USERNAME }} --password-stdin
       - name: Set up Docker Buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
@@ -40,10 +40,10 @@ jobs:
           .bin/update_modules
       - name: Get core templates
         run: |
-          faas-cli template pull stack
+          faas-cli template pull stack -f ./stack.yml -f ./rent_flat.yml -f ./rent_office.yml
       - name: Build multi platform core functions
         run: |
-          faas-cli publish -f ./base.yml -f ./rent_flat.yml -f ./rent_office.yml --platforms linux/arm,linux/arm64
+          faas-cli publish -f ./stack.yml -f ./rent_flat.yml -f ./rent_office.yml --platforms linux/arm,linux/arm64
       - name: deploy core functions
         if: success() && github.ref == 'refs/heads/main'
         run: |
