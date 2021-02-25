@@ -96,7 +96,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 		wg           sync.WaitGroup
 		raw          []byte
 		httpResponse *http.Response
-		schemas      = make(map[otodom.SchemaKey]otodom.Schema)
+		schemas      = make(map[otodom.SchemaKey]interface{})
 		entries      = make(map[otodom.SchemaKey][]interface{})
 		created      = time.Now()
 	)
