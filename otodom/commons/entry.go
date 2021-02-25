@@ -18,23 +18,12 @@ type Schema struct {
 	Link       Field `json:"link"`
 }
 
-// Entry stores Otodom dashboard structure
-type Entry struct {
-	Title      string `json:"title"`
-	Name       string `json:"name"`
-	Region     string `json:"region"`
-	Price      string `json:"price"`
-	TotalPrice string `json:"total_price"`
-	Area       string `json:"area"`
-	Link       string `json:"link"`
-}
-
 // CrawlingResponse stores Otodom schema
 type CrawlingResponse struct {
-	SchemaName    string  `json:"schema_name"`
-	SchemaVersion string  `json:"schema_version"`
-	Schema        Schema  `json:"schema"`
-	Entries       []Entry `json:"entries"`
+	SchemaName    string        `json:"schema_name"`
+	SchemaVersion string        `json:"schema_version"`
+	Schema        interface{}   `json:"schema"`
+	Entries       []interface{} `json:"entries"`
 }
 
 // SchemaKey store key for schema

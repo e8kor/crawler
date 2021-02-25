@@ -84,7 +84,7 @@ functions:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
       SCHEMA_NAME: "office-rent"
-      SCHEMA_VERSION: "v0.0.2"
+      SCHEMA_VERSION: "v0.0.3"
       exec_timeout: 2m
     labels:
       com.openfaas.scale.min: 6
@@ -129,7 +129,7 @@ functions:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
       SCHEMA_NAME: "flat-rent"
-      SCHEMA_VERSION: "v0.0.2"
+      SCHEMA_VERSION: "v0.0.3"
       exec_timeout: 2m
     labels:
       com.openfaas.scale.min: 6

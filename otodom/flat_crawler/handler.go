@@ -13,10 +13,32 @@ import (
 	otodom "github.com/e8kor/crawler/otodom/commons"
 )
 
+// Entry stores Otodom dashboard structure
+type Entry struct {
+	Title  string `json:"title"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+	Rooms  string `json:"rooms"`
+	Price  string `json:"price"`
+	Area   string `json:"area"`
+	Link   string `json:"link"`
+}
+
+// Schema stores Otodom schema
+type Schema struct {
+	Title  otodom.Field `json:"title"`
+	Name   otodom.Field `json:"name"`
+	Region otodom.Field `json:"region"`
+	Rooms  otodom.Field `json:"rooms"`
+	Price  otodom.Field `json:"price"`
+	Area   otodom.Field `json:"area"`
+	Link   otodom.Field `json:"link"`
+}
+
 //Handle is main function entrypoint
 func Handle(w http.ResponseWriter, r *http.Request) {
 	var (
-		entries      []otodom.Entry
+		entries      []interface{}
 		response     otodom.CrawlingResponse
 		httpResponse *http.Response
 	)
@@ -33,14 +55,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	response = otodom.CrawlingResponse{
 		SchemaName:    schemaName,
 		SchemaVersion: schemaVersion,
-		Schema: otodom.Schema{
-			Title:      otodom.Field{"Title", "Advertisement Post title", "text"},
-			Name:       otodom.Field{"Agency Name", "Agency name or Private Offer", "text"},
-			Region:     otodom.Field{"Estate localtion", "Estate location in Poland", "text"},
-			Price:      otodom.Field{"Price for square meter", "Price in square meter in Polish zloty", "zl/m2"},
-			TotalPrice: otodom.Field{"Total estate price", "Total estate in Polish zloty", "zl"},
-			Area:       otodom.Field{"Available area", "Available area in square meters", "m2"},
-			Link:       otodom.Field{"URL", "Offer URL", "URL"},
+		Schema: Schema{
+			Title:  otodom.Field{"Title", "Advertisement Post title", "text"},
+			Name:   otodom.Field{"Agency Name", "Agency name or Private Offer", "text"},
+			Region: otodom.Field{"Estate localtion", "Estate location in Poland", "text"},
+			Rooms:  otodom.Field{"Rooms in apartment", "Room count in apartment", "number"},
+			Price:  otodom.Field{"Estate price", "Estate in Polish zloty", "number"},
+			Area:   otodom.Field{"Available area", "Available area in square meters", "number"},
+			Link:   otodom.Field{"URL", "Offer URL", "URL"},
 		},
 		Entries: entries,
 	}
@@ -64,19 +86,19 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // CollectEntries crawls Otodom dashboard entries from url
-func CollectEntries(url string) (entries []otodom.Entry) {
+func CollectEntries(url string) (entries []interface{}) {
 
 	c := colly.NewCollector()
 
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
-		entry := otodom.Entry{
-			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
-			Name:       e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
-			Region:     e.ChildText("div.offer-item-details > header > p"),
-			Price:      otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-price-per-m")),
-			TotalPrice: otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-price")),
-			Area:       otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area")),
-			Link:       otodom.TakeChractersBefore(e.ChildAttr("div.offer-item-details > header > h3 > a", "href"), ".html"),
+		entry := Entry{
+			Title:  e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
+			Name:   e.ChildText("div.offer-item-details-bottom > ul > li.pull-right"),
+			Region: e.ChildText("div.offer-item-details > header > p"),
+			Rooms:  otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-rooms.hidden-xs")),
+			Price:  otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.offer-item-price")),
+			Area:   otodom.ExtractNumber(e.ChildText("div.offer-item-details > ul > li.hidden-xs.offer-item-area")),
+			Link:   otodom.TakeChractersBefore(e.ChildAttr("div.offer-item-details > header > h3 > a", "href"), ".html"),
 		}
 		entries = append(entries, entry)
 	})

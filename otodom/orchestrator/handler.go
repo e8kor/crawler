@@ -97,7 +97,7 @@ func processPages(gatewayPrefix string, pages []otodom.Page) (err error) {
 		raw          []byte
 		httpResponse *http.Response
 		schemas      = make(map[otodom.SchemaKey]otodom.Schema)
-		entries      = make(map[otodom.SchemaKey][]otodom.Entry)
+		entries      = make(map[otodom.SchemaKey][]interface{})
 		created      = time.Now()
 	)
 	ch := make(chan otodom.CrawlingResponse, 40)
