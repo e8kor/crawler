@@ -60,7 +60,8 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      CRAWLER_SUFFIX: "/otodom-office-rent-crawler"
+      DOMAIN: "otodom-rent"
+      CRAWLER_SUFFIX: "/otodom-office-crawler"
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
       write_timeout: 5m
@@ -70,24 +71,32 @@ functions:
     labels:
       com.openfaas.scale.min: 1
       app: "function"
-  otodom-office-rent-crawler:
+  otodom-office-buy-orchestrator:
     lang: golang-middleware
-    handler: ./otodom/office_crawler
-    image: e8kor/crawler:otodom-crawler
+    handler: ./otodom/orchestrator
+    image: e8kor/crawler:otodom-orchestrator
     limits:
       memory: 128Mi
       cpu: 256m
     requests:
       memory: 64Mi
       cpu: 256m
+    annotations:
+      schedule: "*/5 * * * *"
+      topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      SCHEMA_NAME: "office-rent"
-      SCHEMA_VERSION: "v0.0.3"
-      exec_timeout: 2m
+      DOMAIN: "otodom-buy"
+      CRAWLER_SUFFIX: "/otodom-office-crawler"
+      SOURCE_URL: "https://www.otodom.pl/sprzedaz/lokal/krakow/?search%5Bcity_id%5D=38"
+      GATEWAY_URL: "http://gateway.openfaas:8080/function"
+      write_timeout: 5m
+      read_timeout: 5m
+      exec_timeout: 5m
+      handler_wait_duration: 1m
     labels:
-      com.openfaas.scale.min: 6
+      com.openfaas.scale.min: 1
       app: "function"
   otodom-flat-rent-orchestrator:
     lang: golang-middleware
@@ -105,7 +114,9 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      CRAWLER_SUFFIX: "/otodom-flat-rent-crawler"
+      DOMAIN: "otodom-rent"
+      CRAWLER_SUFFIX: "/otodom-flat-crawler"
+      PAGES_SUFFIX: "/otodom-total-pages"
       SOURCE_URL: "https://www.otodom.pl/wynajem/mieszkanie/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
       write_timeout: 5m
@@ -115,10 +126,38 @@ functions:
     labels:
       com.openfaas.scale.min: 1
       app: "function"
-  otodom-flat-rent-crawler:
+  otodom-flat-buy-orchestrator:
     lang: golang-middleware
-    handler: ./otodom/flat_crawler
-    image: e8kor/crawler:otodom-crawler
+    handler: ./otodom/orchestrator
+    image: e8kor/crawler:otodom-orchestrator
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    annotations:
+      schedule: "*/5 * * * *"
+      topic: cron-function
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    environment:
+      DOMAIN: "otodom-buy"
+      CRAWLER_SUFFIX: "/otodom-flat-crawler"
+      PAGES_SUFFIX: "/otodom-total-pages"
+      SOURCE_URL: "https://www.otodom.pl/sprzedaz/mieszkanie/krakow/?search%5Bcity_id%5D=38"
+      GATEWAY_URL: "http://gateway.openfaas:8080/function"
+      write_timeout: 5m
+      read_timeout: 5m
+      exec_timeout: 5m
+      handler_wait_duration: 1m
+    labels:
+      com.openfaas.scale.min: 1
+      app: "function"
+  otodom-office-crawler:
+    lang: golang-middleware
+    handler: ./otodom/office_crawler
+    image: e8kor/crawler:otodom-office-crawler
     limits:
       memory: 128Mi
       cpu: 256m
@@ -128,8 +167,44 @@ functions:
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
-      SCHEMA_NAME: "flat-rent"
+      SCHEMA_NAME: "office"
       SCHEMA_VERSION: "v0.0.3"
+      exec_timeout: 2m
+    labels:
+      com.openfaas.scale.min: 6
+      app: "function"
+  otodom-flat-crawler:
+    lang: golang-middleware
+    handler: ./otodom/flat_crawler
+    image: e8kor/crawler:otodom-flat-crawler
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    environment:
+      SCHEMA_NAME: "flat"
+      SCHEMA_VERSION: "v0.0.3"
+      exec_timeout: 2m
+    labels:
+      com.openfaas.scale.min: 6
+      app: "function"
+  otodom-total-pages:
+    lang: golang-middleware
+    handler: ./otodom/office_crawler
+    image: e8kor/crawler:otodom-total-pages
+    limits:
+      memory: 128Mi
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    environment:
       exec_timeout: 2m
     labels:
       com.openfaas.scale.min: 6

@@ -1,9 +1,0 @@
-package main
-
-import (
-	"github.com/e8kor/crawler/otodom/crawler/handler/function"
-)
-
-func main() {
-	function.CollectEntries("https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38")
-}
