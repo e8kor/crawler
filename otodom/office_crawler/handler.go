@@ -50,7 +50,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
 
-	entries = append(entries, CollectEntries(item)...)
+	entries = append(entries, CollectEntries(item, 5)...)
 
 	response = otodom.CrawlingResponse{
 		SchemaName:    schemaName,
@@ -86,10 +86,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // CollectEntries crawls Otodom dashboard entries from url
-func CollectEntries(url string) (entries []interface{}) {
+func CollectEntries(url string, retryCount int) (entries []interface{}) {
 
+	retry := false
 	c := colly.NewCollector()
-
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
 			Title:      e.ChildText("div.offer-item-details > header > h3 > a > span > span"),
@@ -107,8 +107,18 @@ func CollectEntries(url string) (entries []interface{}) {
 		log.Println("visiting", r.URL.String())
 	})
 
+	c.OnError(func(resp *colly.Response, err error) {
+		log.Println("error scraping url", url, "response:", resp)
+		log.Println("error scraping url", url, "error:", err)
+		retry = true
+	})
+
 	c.Visit(url)
 
+	if retryCount < 0 && retry {
+		log.Println("going to retry url", url)
+		return CollectEntries(url, retryCount-1)
+	}
 	log.Println("collected", len(entries), "records for url:", url)
 	return entries
 }
