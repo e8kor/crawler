@@ -81,11 +81,13 @@ func processPages(
 	crawlerSuffix string,
 	pages []otodom.Page,
 ) (
-	schemas map[otodom.SchemaKey]interface{},
-	entries map[otodom.SchemaKey][]interface{},
+	map[otodom.SchemaKey]interface{},
+	map[otodom.SchemaKey][]interface{},
 ) {
 	var (
-		wg sync.WaitGroup
+		wg      sync.WaitGroup
+		schemas map[otodom.SchemaKey]interface{}
+		entries map[otodom.SchemaKey][]interface{}
 	)
 	ch := make(chan otodom.CrawlingResponse, 40)
 	wg.Add(len(pages))
@@ -97,17 +99,18 @@ func processPages(
 	go func() {
 		for entry := range ch {
 			if entry.SchemaName == "" || entry.SchemaVersion == "" {
-				log.Printf("skipping entry %+v\n", entry)
+				log.Println("skipping entry", entry)
 				wg.Done()
 			} else {
 				key := entry.MakeKey()
 				values, found := entries[key]
 				if found {
-					values = append(values, entry.Entries...)
+					entries[key] = append(values, entry.Entries...)
+				} else if entry.Entries != nil {
+					entries[key] = entry.Entries
 				} else {
-					values = entry.Entries
+					log.Println("skipping entry because Entries are nil", entry)
 				}
-				entries[key] = values
 				schemas[key] = entry.Schema
 				log.Printf("added %d for %s datasets, total count is %d \n", len(entry.Entries), key, len(values))
 				wg.Done()
@@ -116,7 +119,7 @@ func processPages(
 	}()
 	wg.Wait()
 	close(ch)
-	return
+	return schemas, entries
 }
 
 func getEntries(ch chan otodom.CrawlingResponse, crawlerSuffix string, page otodom.Page) {
