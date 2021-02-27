@@ -1,8 +1,6 @@
 package function
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
@@ -36,7 +34,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	for _, url := range urls {
 		params := nurl.Values{}
 		params.Add("url", url)
-		err := framework.CallFunction(pagesSuffix, params, empty, pages)
+		err := framework.CallFunction(pagesSuffix, params, empty, &pages)
 		if err != nil {
 			framework.HandleFailure(w, err)
 			return
@@ -79,26 +77,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func collectPages(gatewayPrefix string, pagesSuffix string, pageURL string) (pages []otodom.Page, err error) {
-	var (
-		params = url.Values{}
-		data   []otodom.Page
-	)
-	log.Println("sending collect total pages request")
-	params.Add("url", pageURL)
-	response, err := http.Post(gatewayPrefix+pagesSuffix+"?"+params.Encode(), "application/json", bytes.NewBuffer([]byte("{}")))
-	if err != nil {
-		log.Println("error when sending collect total pages request", err)
-		return nil, err
-	}
-	err = json.NewDecoder(response.Body).Decode(&data)
-	if err != nil {
-		log.Println("failed to read collect total pages response", err)
-		return nil, err
-	}
-	return data, nil
-}
-
 func processPages(
 	crawlerSuffix string,
 	pages []otodom.Page,
@@ -122,7 +100,7 @@ func processPages(
 				log.Printf("skipping entry %+v\n", entry)
 				wg.Done()
 			} else {
-				key := otodom.SchemaKey{entry.SchemaName, entry.SchemaVersion}
+				key := entry.MakeKey()
 				values, found := entries[key]
 				if found {
 					values = append(values, entry.Entries...)
@@ -150,7 +128,7 @@ func getEntries(ch chan otodom.CrawlingResponse, crawlerSuffix string, page otod
 	log.Println("sending otodom crawler request for", page.URL)
 	params := url.Values{}
 	params.Add("url", page.URL)
-	err := framework.CallFunction(crawlerSuffix, params, empty, data)
+	err := framework.CallFunction(crawlerSuffix, params, empty, &data)
 	if err != nil {
 		log.Println("failed to get response from scrapper", err)
 		ch <- data
