@@ -21,14 +21,21 @@ func TakeChractersBefore(raw string, predicate string) (result string) {
 }
 
 //RetryAttempts generic to retry  collection
-func RetryAttempts(retryCount int, action func() (data []interface{}, err error)) (data []interface{}) {
+func RetryAttempts(retryCount int, action func() ([]interface{}, error)) []interface{} {
+	var (
+		data []interface{}
+		err  error
+	)
 	for {
-		result, err := action()
-		if err != nil && retryCount > 0 {
+		data, err = action()
+		if err != nil {
 			retryCount = retryCount - 1
+		} else {
+			retryCount = 0
+		}
+		if retryCount == 0 {
 			break
 		}
-		data = result
 	}
-	return
+	return data
 }
