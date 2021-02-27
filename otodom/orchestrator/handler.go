@@ -86,10 +86,10 @@ func processPages(
 ) {
 	var (
 		wg      sync.WaitGroup
-		schemas map[otodom.SchemaKey]interface{}
-		entries map[otodom.SchemaKey][]interface{}
+		schemas = make(map[otodom.SchemaKey]interface{})
+		entries = make(map[otodom.SchemaKey][]interface{})
+		ch      = make(chan otodom.CrawlingResponse, 40)
 	)
-	ch := make(chan otodom.CrawlingResponse, 40)
 	wg.Add(len(pages))
 	log.Println("scheduling", len(pages), "tasks")
 	for _, page := range pages {
