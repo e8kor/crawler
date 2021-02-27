@@ -40,6 +40,12 @@ type SchemaKey struct {
 	SchemaVersion string `json:"schema_version"`
 }
 
+// MakeKey creates instance of SchemaKey
+func (entry *CrawlingResponse) MakeKey() (key SchemaKey) {
+	key = SchemaKey{entry.SchemaName, entry.SchemaVersion}
+	return
+}
+
 // NewEntry create new record
 func NewEntry(
 	domain string,
