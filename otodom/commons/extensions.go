@@ -1,6 +1,7 @@
 package commons
 
 import (
+	"log"
 	"regexp"
 	"strings"
 )
@@ -34,8 +35,13 @@ func RetryAttempts(retryCount int, action func() ([]interface{}, error)) []inter
 			retryCount = 0
 		}
 		if retryCount == 0 {
+			if err != nil {
+				log.Panicln("stop retrying on error", err)
+			}
 			break
 		}
+		log.Println("error:", err)
+		log.Println("retry", retryCount, "...")
 	}
 	return data
 }
