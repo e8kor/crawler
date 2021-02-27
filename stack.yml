@@ -62,6 +62,7 @@ functions:
     environment:
       DOMAIN: "otodom-rent"
       CRAWLER_SUFFIX: "/otodom-office-crawler"
+      PAGES_SUFFIX: "/otodom-total-pages"
       SOURCE_URL: "https://www.otodom.pl/wynajem/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
       write_timeout: 5m
@@ -89,6 +90,7 @@ functions:
     environment:
       DOMAIN: "otodom-buy"
       CRAWLER_SUFFIX: "/otodom-office-crawler"
+      PAGES_SUFFIX: "/otodom-total-pages"
       SOURCE_URL: "https://www.otodom.pl/sprzedaz/lokal/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
       write_timeout: 5m

@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 )
 
 // StreamToByte convert stream of bytes to byte array
@@ -39,6 +41,44 @@ func RandomFilename() (s string, err error) {
 		return
 	}
 	s = fmt.Sprintf("%x", b)
+	return
+}
+
+//CallFunction calls underlyting function
+func CallFunction(functionName string, params url.Values, body interface{}, data interface{}) (err error) {
+	var (
+		gatewayPrefix = os.Getenv("GATEWAY_URL")
+	)
+	raw, err := json.Marshal(body)
+	if err != nil {
+		log.Println("error while marshalling data for", err)
+		return
+	}
+	response, err := http.Post(gatewayPrefix+functionName+"?"+params.Encode(), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		log.Println("error when sending", functionName, "request", err)
+		return
+	}
+	err = json.NewDecoder(response.Body).Decode(&data)
+	return nil
+}
+
+//FireFunction calls underlyting function
+func FireFunction(functionName string, params url.Values, body interface{}) (err error) {
+	var (
+		gatewayPrefix = os.Getenv("GATEWAY_URL")
+	)
+	raw, err := json.Marshal(body)
+	if err != nil {
+		log.Println("error while marshalling data for", err)
+		return
+	}
+	response, err := http.Post(gatewayPrefix+functionName+"?"+params.Encode(), "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		log.Println("error when sending", functionName, "function request", err)
+		return
+	}
+	log.Println("response from", functionName, "function", response)
 	return
 }
 
