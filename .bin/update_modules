@@ -2,7 +2,7 @@
 parent="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 parent="$parent/.."
 
-modules=("$parent/database" "$parent/storage" "$parent/otodom/flat_crawler" "$parent/otodom/office_crawler" "$parent/otodom/orchestrator")
+modules=("$parent/database" "$parent/storage" "$parent/otodom/flat_crawler" "$parent/otodom/office_crawler" "$parent/otodom/total_pages" "$parent/otodom/orchestrator")
 
 for module in ${modules[@]}; do
     (cd $module; go mod vendor)
