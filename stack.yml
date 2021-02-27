@@ -16,7 +16,7 @@ functions:
     environment:
       PG_HOST: "database-postgresql.database"
       PG_PORT: "5432"
-      exec_timeout: "3m"
+      exec_timeout: 3m
     secrets:
       - database-name
       - database-username
@@ -39,7 +39,7 @@ functions:
       DOCKER_CLI_EXPERIMENTAL: enabled
     environment:
       MINIO_HOST: "external-storage.storage:9000"
-      exec_timeout: "3m"
+      exec_timeout: 3m
     secrets:
       - storage-access-key
       - storage-secret-key
@@ -129,9 +129,7 @@ functions:
       PAGES_SUFFIX: "/otodom-total-pages"
       SOURCE_URL: "https://www.otodom.pl/wynajem/mieszkanie/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
-      write_timeout: 5m
-      read_timeout: 5m
-      exec_timeout: 5m
+      exec_timeout: 15m
       handler_wait_duration: 1m
     labels:
       com.openfaas.scale.zero: true
@@ -159,9 +157,7 @@ functions:
       PAGES_SUFFIX: "/otodom-total-pages"
       SOURCE_URL: "https://www.otodom.pl/sprzedaz/mieszkanie/krakow/?search%5Bcity_id%5D=38"
       GATEWAY_URL: "http://gateway.openfaas:8080/function"
-      write_timeout: 5m
-      read_timeout: 5m
-      exec_timeout: 5m
+      exec_timeout: 15m
       handler_wait_duration: 1m
     labels:
       com.openfaas.scale.zero: true
@@ -183,10 +179,10 @@ functions:
     environment:
       SCHEMA_NAME: "office"
       SCHEMA_VERSION: "v0.0.3"
-      exec_timeout: 2m
+      exec_timeout: 5m
     labels:
-      com.openfaas.scale.max: 15
-      com.openfaas.scale.min: 10
+      com.openfaas.scale.max: 20
+      com.openfaas.scale.min: 15
       app: "function"
   otodom-flat-crawler:
     lang: golang-middleware
@@ -203,10 +199,10 @@ functions:
     environment:
       SCHEMA_NAME: "flat"
       SCHEMA_VERSION: "v0.0.3"
-      exec_timeout: 2m
+      exec_timeout: 5m
     labels:
-      com.openfaas.scale.max: 15
-      com.openfaas.scale.min: 10
+      com.openfaas.scale.max: 20
+      com.openfaas.scale.min: 15
       app: "function"
   otodom-total-pages:
     lang: golang-middleware
