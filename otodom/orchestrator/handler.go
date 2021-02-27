@@ -73,7 +73,7 @@ func collectPages(gatewayPrefix string, pagesSuffix string, pageURL string) (pag
 	)
 	log.Println("sending collect total pages request")
 	params.Add("url", pageURL)
-	response, err := http.Get(gatewayPrefix + pagesSuffix + "?" + params.Encode())
+	response, err := http.Post(gatewayPrefix+pagesSuffix+"?"+params.Encode(), "application/json", bytes.NewBuffer([]byte{}))
 	if err != nil {
 		log.Println("error when sending collect total pages request", err)
 		return nil, err

@@ -15,6 +15,7 @@ import (
 //Handle is main function entrypoint
 func Handle(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query().Get("url")
+	log.Println("preparing pages for", url)
 	pages := collectPages(url)
 	framework.HandleSuccess(w, pages)
 	return
