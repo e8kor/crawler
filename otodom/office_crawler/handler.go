@@ -49,8 +49,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		item           = r.URL.Query().Get("url")
 		destenationURL = r.Header.Get("X-Callback-Url")
 	)
-
-	entries = append(entries, CollectEntries(item, 5)...)
+	entries = otodom.RetryAttempts(5, func() (data []interface{}, err error) {
+		return CollectEntries(item)
+	})
 
 	response = otodom.CrawlingResponse{
 		SchemaName:    schemaName,
@@ -86,9 +87,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // CollectEntries crawls Otodom dashboard entries from url
-func CollectEntries(url string, retryCount int) (entries []interface{}) {
-
-	retry := false
+func CollectEntries(url string) (entries []interface{}, err error) {
 	c := colly.NewCollector()
 	c.OnHTML("article[id]", func(e *colly.HTMLElement) {
 		entry := Entry{
@@ -107,18 +106,13 @@ func CollectEntries(url string, retryCount int) (entries []interface{}) {
 		log.Println("visiting", r.URL.String())
 	})
 
-	c.OnError(func(resp *colly.Response, err error) {
+	c.OnError(func(resp *colly.Response, scrapError error) {
 		log.Println("error scraping url", url, "response:", resp)
 		log.Println("error scraping url", url, "error:", err)
-		retry = true
+		err = scrapError
 	})
 
 	c.Visit(url)
-
-	if retryCount < 0 && retry {
-		log.Println("going to retry url", url)
-		return CollectEntries(url, retryCount-1)
-	}
 	log.Println("collected", len(entries), "records for url:", url)
-	return entries
+	return
 }
