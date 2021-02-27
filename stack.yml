@@ -22,6 +22,8 @@ functions:
       - database-username
       - database-password
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 3
       com.openfaas.scale.min: 1
       app: "function"
   storage:
@@ -42,6 +44,8 @@ functions:
       - storage-access-key
       - storage-secret-key
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 5
       com.openfaas.scale.min: 1
       app: "function"
   otodom-office-rent-orchestrator:
@@ -70,6 +74,8 @@ functions:
       exec_timeout: 5m
       handler_wait_duration: 1m
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 2
       com.openfaas.scale.min: 1
       app: "function"
   otodom-office-buy-orchestrator:
@@ -83,7 +89,7 @@ functions:
       memory: 64Mi
       cpu: 256m
     annotations:
-      schedule: "*/5 * * * *"
+      schedule: "*/10 * * * *"
       topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
@@ -98,6 +104,8 @@ functions:
       exec_timeout: 5m
       handler_wait_duration: 1m
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 2
       com.openfaas.scale.min: 1
       app: "function"
   otodom-flat-rent-orchestrator:
@@ -126,6 +134,8 @@ functions:
       exec_timeout: 5m
       handler_wait_duration: 1m
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 2
       com.openfaas.scale.min: 1
       app: "function"
   otodom-flat-buy-orchestrator:
@@ -154,6 +164,8 @@ functions:
       exec_timeout: 5m
       handler_wait_duration: 1m
     labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 2
       com.openfaas.scale.min: 1
       app: "function"
   otodom-office-crawler:
@@ -173,7 +185,8 @@ functions:
       SCHEMA_VERSION: "v0.0.3"
       exec_timeout: 2m
     labels:
-      com.openfaas.scale.min: 3
+      com.openfaas.scale.max: 15
+      com.openfaas.scale.min: 10
       app: "function"
   otodom-flat-crawler:
     lang: golang-middleware
@@ -192,7 +205,8 @@ functions:
       SCHEMA_VERSION: "v0.0.3"
       exec_timeout: 2m
     labels:
-      com.openfaas.scale.min: 3
+      com.openfaas.scale.max: 15
+      com.openfaas.scale.min: 10
       app: "function"
   otodom-total-pages:
     lang: golang-middleware
@@ -209,6 +223,7 @@ functions:
     environment:
       exec_timeout: 2m
     labels:
+      com.openfaas.scale.max: 5
       com.openfaas.scale.min: 2
       app: "function"
 configuration:
