@@ -59,8 +59,14 @@ func CallFunction(functionName string, params url.Values, body interface{}, data
 		log.Println("error when sending", functionName, "request", err)
 		return
 	}
+	log.Println("function", functionName, "response is:", response)
 	err = json.NewDecoder(response.Body).Decode(&data)
-	return nil
+	if err != nil {
+		log.Println("error reading", functionName, "response", err)
+		return
+	}
+	log.Println("function", functionName, "parsed response is:", data)
+	return
 }
 
 //FireFunction calls underlyting function
