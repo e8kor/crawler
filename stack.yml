@@ -2,52 +2,6 @@ version: 1.0
 provider:
   name: openfaas
 functions:
-  database:
-    lang: golang-middleware
-    handler: ./database
-    image: e8kor/crawler:database
-    limits:
-      cpu: 256m
-    requests:
-      memory: 64Mi
-      cpu: 256m
-    build_args:
-      DOCKER_CLI_EXPERIMENTAL: enabled
-    environment:
-      PG_HOST: "database-postgresql.database"
-      PG_PORT: "5432"
-      exec_timeout: 3m
-    secrets:
-      - database-name
-      - database-username
-      - database-password
-    labels:
-      com.openfaas.scale.zero: true
-      com.openfaas.scale.max: 3
-      com.openfaas.scale.min: 1
-      app: "function"
-  storage:
-    lang: golang-middleware
-    handler: ./storage
-    image: e8kor/crawler:storage
-    limits:
-      cpu: 256m
-    requests:
-      memory: 64Mi
-      cpu: 256m
-    build_args:
-      DOCKER_CLI_EXPERIMENTAL: enabled
-    environment:
-      MINIO_HOST: "external-storage.storage:9000"
-      exec_timeout: 3m
-    secrets:
-      - storage-access-key
-      - storage-secret-key
-    labels:
-      com.openfaas.scale.zero: true
-      com.openfaas.scale.max: 5
-      com.openfaas.scale.min: 1
-      app: "function"
   otodom-office-rent-orchestrator:
     lang: golang-middleware
     handler: ./otodom/orchestrator
@@ -59,7 +13,7 @@ functions:
       memory: 64Mi
       cpu: 256m
     annotations:
-      schedule: "*/5 * * * *"
+      schedule: "*/30 * * * *"
       topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
@@ -89,7 +43,7 @@ functions:
       memory: 64Mi
       cpu: 256m
     annotations:
-      schedule: "*/10 * * * *"
+      schedule: "*/30 * * * *"
       topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
@@ -147,7 +101,7 @@ functions:
       memory: 64Mi
       cpu: 256m
     annotations:
-      schedule: "*/5 * * * *"
+      schedule: "*/30 * * * *"
       topic: cron-function
     build_args:
       DOCKER_CLI_EXPERIMENTAL: enabled
@@ -221,6 +175,52 @@ functions:
     labels:
       com.openfaas.scale.max: 5
       com.openfaas.scale.min: 2
+      app: "function"
+  database:
+    lang: golang-middleware
+    handler: ./database
+    image: e8kor/crawler:database
+    limits:
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    environment:
+      PG_HOST: "database-postgresql.database"
+      PG_PORT: "5432"
+      exec_timeout: 3m
+    secrets:
+      - database-name
+      - database-username
+      - database-password
+    labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 3
+      com.openfaas.scale.min: 1
+      app: "function"
+  storage:
+    lang: golang-middleware
+    handler: ./storage
+    image: e8kor/crawler:storage
+    limits:
+      cpu: 256m
+    requests:
+      memory: 64Mi
+      cpu: 256m
+    build_args:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    environment:
+      MINIO_HOST: "external-storage.storage:9000"
+      exec_timeout: 3m
+    secrets:
+      - storage-access-key
+      - storage-secret-key
+    labels:
+      com.openfaas.scale.zero: true
+      com.openfaas.scale.max: 5
+      com.openfaas.scale.min: 1
       app: "function"
 configuration:
   templates:
